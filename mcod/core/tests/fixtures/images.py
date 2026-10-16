@@ -5,6 +5,12 @@ import pytest
 
 
 @pytest.fixture
+def valid_pdf_bytes() -> bytes:
+    pdf_path = Path(__file__).parents[4] / "data" / "test_samples" / "example.pdf"
+    return pdf_path.read_bytes()
+
+
+@pytest.fixture
 def valid_jpeg_bytes() -> bytes:
     image_path = Path(__file__).parents[4] / "data" / "test_samples" / "example.jpg"
     return image_path.read_bytes()

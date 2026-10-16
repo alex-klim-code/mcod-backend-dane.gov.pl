@@ -233,6 +233,16 @@ class BannerBlock(blocks.StructBlock):
         form_classname = "struct-block banner-block"
 
 
+class FacebookBannerBlock(BannerBlock):
+    image = ImageChooserBlock(
+        required=True,
+        label="Obrazek",
+        help_text="""
+                                    Obrazek bannera. Minimalna szerokość: 360 pikseli.
+                                    """,
+    )
+
+
 class CTAImageBlock(blocks.StructBlock):
     image = ImageChooserBlock(
         label="Obrazek",
@@ -365,3 +375,10 @@ class CarouselBlockWithAdditionalTextTools(CarouselBlock):
         required=False,
         features=CMS_RICH_TEXT_FIELD_MORE_FEATURES,
     )
+
+
+class FacebookCarouselBlock(blocks.StreamBlock):
+    banner = FacebookBannerBlock(label="Baner", required=False)
+
+    class Meta:
+        form_classname = "struct-block only-banner-block"

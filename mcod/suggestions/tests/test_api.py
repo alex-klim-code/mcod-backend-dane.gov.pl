@@ -2,6 +2,7 @@ from typing import Dict, Optional
 from unittest.mock import patch
 
 import pytest
+from django.utils.timezone import localtime
 from falcon import HTTP_201, HTTP_401, HTTP_CONFLICT, HTTP_NOT_FOUND, HTTP_OK, testing
 from falcon.testing import Result
 from falcon.testing.client import TestClient as FalconTestClient
@@ -237,6 +238,7 @@ def test_submission_created(
     assert event.category == Category.SUGGEST_DATA
     # Email was sent
     assert len(mailoutbox) == 1
+    assert localtime(event.submission_date).strftime("%Y-%m-%d %H:%M") in mailoutbox[0].body
 
 
 @pytest.mark.parametrize("api_version", ["1.0", "1.4"])

@@ -20,6 +20,7 @@ api_router.register_endpoint("documents", DocumentsAPIViewSet)
 urlpatterns = common_urlpatterns + [
     path("documents/", include(wagtaildocs_urls)),
     path("api/", api_router.urls),
+    path("ckeditor/", include("ckeditor_uploader.urls")),
     path("hypereditor/", include("hypereditor.urls")),
     re_path(
         r"^admin/pages/(\d+)/revisions/(\d+)/view/$",

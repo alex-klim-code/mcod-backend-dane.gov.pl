@@ -20,7 +20,7 @@ else:
         LEGAL = "LEGAL"
         OTHER = "OTHER"
 
-    _SUBJECT_CHOICES = (
+    SUBJECT_CHOICES = (
         (Subject.DATA, "Dane"),
         (Subject.PORTAL, "Portal dane.gov.pl"),
         (Subject.DATA_PROTECTION, "Ochrona danych osobowych w portalu"),
@@ -44,7 +44,7 @@ class Category(str, Enum):
     OTHER = "OTHER"
 
 
-_CATEGORY_CHOICES = (
+CATEGORY_CHOICES = (
     (Category.SHARING, "Udostępnianie danych w portalu"),
     (Category.SUGGEST_DATA, "Zaproponuj dane do udostępnienia w portalu"),
     (Category.SUGGEST_REUSE, "Zaproponuj przykład ponownego wykorzystania danych"),
@@ -83,17 +83,24 @@ SUBJECT_CATEGORY_DEPENDENCIES = {
     Subject.OTHER: [],
 }
 
+CONTENT_TYPE_TO_TYPE_LABEL = {
+    ("suggestions", "datasetcomment"): "UwagaDoZbioru",
+    ("suggestions", "resourcecomment"): "UwagaDoZasobu",
+    ("showcases", "showcaseproposal"): "PoCoTo",
+    ("suggestions", "datasetsubmission"): "PropozycjaNowychDanych",
+}
+
 
 class SubmissionEvent(models.Model):
     subject = models.CharField(
         max_length=32,
-        choices=_SUBJECT_CHOICES,
+        choices=SUBJECT_CHOICES,
         blank=False,
         verbose_name=_("Submission subject"),
     )
     category = models.CharField(
         max_length=32,
-        choices=_CATEGORY_CHOICES,
+        choices=CATEGORY_CHOICES,
         blank=True,
         verbose_name=_("Submission category"),
     )
@@ -115,14 +122,20 @@ class SubmissionEvent(models.Model):
     )
     reference_object = GenericForeignKey("reference_content_type", "reference_object_id")
 
-    _subject_labels = {k.value: v for k, v in _SUBJECT_CHOICES}
-    _category_labels = {k.value: v for k, v in _CATEGORY_CHOICES}
+    _subject_labels = {k.value: v for k, v in SUBJECT_CHOICES}
+    _category_labels = {k.value: v for k, v in CATEGORY_CHOICES}
 
     class Meta:
         verbose_name = _("Submission Event")
         verbose_name_plural = _("Submission Events")
         indexes = [
             models.Index(fields=["reference_content_type", "reference_object_id"], name="subm_evt_ref_ct_oid_idx"),
+            # Useful for ordering and filtering by date, typical for event logs
+            models.Index(fields=["submission_date"], name="subm_evt_submission_date_idx"),
+            # Covers queries filtering by BOTH (subject, category) AND just (subject)
+            models.Index(fields=["subject", "category"], name="subm_evt_subj_cat_idx"),
+            # Covers queries filtering ONLY by category
+            models.Index(fields=["category"], name="subm_evt_category_idx"),
         ]
 
     def save(self, *args, **kwargs) -> None:

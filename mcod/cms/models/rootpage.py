@@ -5,7 +5,7 @@ from wagtail.api.v2.serializers import StreamField as StreamFieldSerializer
 from wagtail.core.fields import StreamField
 
 from mcod.cms.api.fields import HyperEditorJSONField, LocalizedHyperField
-from mcod.cms.blocks.common import CarouselBlock
+from mcod.cms.blocks.common import CarouselBlock, FacebookCarouselBlock
 from mcod.cms.models.base import BasePage
 
 # Image limit in footer to handle many sets of logos depends on contrast mode
@@ -37,6 +37,15 @@ class RootPage(BasePage):
         verbose_name='Blok nad sekcją "Aktualności"',
         help_text="TODO: napisać",
     )
+
+    facebook_banner_cb = StreamField(
+        FacebookCarouselBlock(max_num=1, required=False),
+        default=None,
+        blank=True,
+        verbose_name="Baner Facebook",
+        help_text="Wybierz obraz banera Facebook dla OD",
+    )
+
     over_login_section_cb_en = StreamField(
         CarouselBlock(max_num=5, required=False),
         default=None,
@@ -57,6 +66,14 @@ class RootPage(BasePage):
         blank=True,
         verbose_name='Blok nad sekcją "Aktualności"',
         help_text="TODO: napisać",
+    )
+
+    facebook_banner_cb_en = StreamField(
+        FacebookCarouselBlock(max_num=1, required=False),
+        default=None,
+        blank=True,
+        verbose_name="Baner Facebook",
+        help_text="Wybierz obraz banera Facebook dla OD",
     )
 
     footer_nav = LocalizedHyperField(default=None, blank=True, null=True, verbose_name="Stopka - sekcja nawigacji")
@@ -92,6 +109,10 @@ class RootPage(BasePage):
             "over_latest_news_cb",
             serializer=StreamFieldSerializer(source="over_latest_news_cb_i18n"),
         ),
+        APIField(
+            "facebook_banner_cb",
+            serializer=StreamFieldSerializer(source="facebook_banner_cb_i18n"),
+        ),
         APIField("footer_nav", serializer=HyperEditorJSONField(source="footer_nav_i18n")),
         APIField("footer_logos", serializer=StreamFieldSerializer(source="footer_logos_i18n")),
     ]
@@ -100,6 +121,7 @@ class RootPage(BasePage):
         StreamFieldPanel("over_login_section_cb"),
         StreamFieldPanel("over_search_field_cb"),
         StreamFieldPanel("over_latest_news_cb"),
+        StreamFieldPanel("facebook_banner_cb"),
         HyperFieldPanel("footer_nav"),
         StreamFieldPanel("footer_logos"),
     ]
@@ -108,6 +130,7 @@ class RootPage(BasePage):
         StreamFieldPanel("over_login_section_cb_en"),
         StreamFieldPanel("over_search_field_cb_en"),
         StreamFieldPanel("over_latest_news_cb_en"),
+        StreamFieldPanel("facebook_banner_cb_en"),
         HyperFieldPanel("footer_nav_en"),
         StreamFieldPanel("footer_logos_en"),
     ]
@@ -116,6 +139,7 @@ class RootPage(BasePage):
         "over_login_section_cb",
         "over_search_field_cb",
         "over_latest_news_cb",
+        "facebook_banner_cb",
         "footer_nav",
         "footer_logos",
     ]
@@ -129,6 +153,7 @@ class RootPage(BasePage):
             "over_login_section_cb",
             "over_search_field_cb",
             "over_latest_news_cb",
+            "facebook_banner_cb",
             "footer_nav",
             "footer_logos",
         ]

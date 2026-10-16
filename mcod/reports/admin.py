@@ -106,6 +106,7 @@ class MonitoringReportsAdmin(ReportsAdmin):
         "suggestions.DatasetComment",
         "suggestions.ResourceComment",
         "showcases.ShowcaseProposal",
+        "submissions.SubmissionEvent",
     ]
 
     class Media:

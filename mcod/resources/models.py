@@ -36,7 +36,7 @@ from django.template.defaultfilters import filesizeformat
 from django.template.loader import render_to_string
 from django.utils.deconstruct import deconstructible
 from django.utils.functional import cached_property
-from django.utils.timezone import now
+from django.utils.timezone import localtime, now
 from django.utils.translation import gettext_lazy as _, override
 from django_celery_beat.models import CrontabSchedule, IntervalSchedule, PeriodicTask
 from django_celery_results.models import TaskResult as TaskResultOrig
@@ -1385,6 +1385,7 @@ class Resource(ExtendedModel):
     ):
         """Send resource comment notification email with submission event context."""
         from mcod.submissions.models import SubmissionEvent
+        from mcod.submissions.service import build_email_subject
 
         event: Optional[SubmissionEvent] = (
             SubmissionEvent.objects.filter(id=submission_event_id).first() if submission_event_id else None
@@ -1400,7 +1401,7 @@ class Resource(ExtendedModel):
             "submission_event_id_display": str(event.id) if event else "-",
             "reference_id": f"UwagaDoZasobu_{resource_comment.id}",
             "submission_date_display": (
-                event.submission_date.strftime("%Y-%m-%d %H:%M") if event and event.submission_date else "-"
+                localtime(event.submission_date).strftime("%Y-%m-%d %H:%M") if event and event.submission_date else "-"
             ),
             "subject_display": event.display_subject if event else "-",
             "category_display": event.display_category if event else "-",
@@ -1413,7 +1414,7 @@ class Resource(ExtendedModel):
             msg_plain = render_to_string(_plain, context=context)
             msg_html = render_to_string(_html, context=context)
             title = self.title.replace("\n", " ").replace("\r", "")
-            subject = _("A comment was posted on the resource %(title)s") % {"title": title}
+            subject = build_email_subject(_("A comment was posted on the resource %(title)s") % {"title": title}, event)
             self.send_mail(
                 subject,
                 msg_plain,

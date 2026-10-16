@@ -1,5 +1,11 @@
+import logging
+
 from django.conf import settings
 from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
+from django.utils.html import format_html_join
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from modeltrans.translator import get_i18n_field
 
@@ -7,6 +13,10 @@ from mcod.lib.admin_mixins import DecisionFilter, HistoryMixin, ModelAdmin, Tras
 from mcod.showcases.forms import ShowcaseForm, ShowcaseProposalForm
 from mcod.showcases.models import Showcase, ShowcaseProposal, ShowcaseProposalTrash, ShowcaseTrash
 from mcod.showcases.tasks import create_showcase_task
+
+external_dataset_url_validator = URLValidator(schemes=("http", "https"))
+
+logger = logging.getLogger("mcod")
 
 
 class ShowcaseAdmin(HistoryMixin, ModelAdmin):
@@ -283,7 +293,23 @@ class ShowcaseProposalMixin(HistoryMixin):
     decision_label.short_description = _("decision")
 
     def external_datasets_admin(self, obj):
-        return obj.external_datasets_links or "-"
+        """Render valid external dataset URLs as safe admin links, skipping invalid URLs."""
+        links = []
+        separator = mark_safe("<br>")
+        for item in obj.external_datasets or []:
+            url = item.get("url")
+
+            if not isinstance(url, str):
+                continue
+
+            try:
+                external_dataset_url_validator(url)
+            except ValidationError as exc:
+                logger.error("External dataset URL (%s) is not valid: %s", url, exc)
+                continue
+            links.append((url, item.get("title") or url))
+
+        return format_html_join(separator, '<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>', links) or "-"
 
     external_datasets_admin.short_description = _("External public data used")
     external_datasets_admin.admin_order_field = "external_datasets"

@@ -579,8 +579,8 @@ msgid "Declared image MIME type does not match file content."
 msgstr "Zadeklarowany typ MIME obrazu nie zgadza się z zawartością pliku."
 
 #, python-format
-msgid "Image too big, max size is %(max_image_size)s bytes"
-msgstr "Plik jest za duży, maksymalny rozmiar to %(max_image_size)s bajtów."
+msgid "File too big, max size is %(max_file_size)s bytes."
+msgstr "Plik jest za duży, maksymalny rozmiar to %(max_file_size)s bajtów."
 
 msgid "Not a valid URL."
 msgstr "Niepoprawny adres URL."
@@ -3241,6 +3241,10 @@ msgstr "Dane na dzień"
 msgid "Invalid file extension: %(ext)s."
 msgstr "Niepoprawne rozszerzenie pliku: %(ext)s."
 
+#, python-format
+msgid "File %(name)s has no extension."
+msgstr "Plik %(name)s nie posiada rozszerzenia."
+
 msgid "Format unknown."
 msgstr "Format pliku nieznany."
 
@@ -5725,3 +5729,39 @@ msgstr "Zdarzenie zgłoszenia"
 
 msgid "Submission Events"
 msgstr "Zdarzenia zgłoszeń"
+
+msgid "Your submission has been received."
+msgstr "Twoje zgłoszenie zostało przyjęte."
+
+msgid "Missing 'data' part in multipart request."
+msgstr "Brakuje części 'data' w żądaniu multipart."
+
+msgid "Invalid JSON in 'data' part."
+msgstr "Nieprawidłowy JSON w części 'data'."
+
+#, python-brace-format
+msgid "Maximum {count} files allowed per request. Got {actual}."
+msgstr "Maksymalna liczba plików na żądanie wynosi {count}. Przesłano {actual}."
+
+#, python-brace-format
+msgid "File extension '.{ext}' is not allowed."
+msgstr "Rozszerzenie pliku '.{ext}' jest niedozwolone."
+
+msgid "Combined file size must not exceed 30 MB."
+msgstr "Łączny rozmiar pliku nie może przekraczać 30 MB."
+
+#, python-brace-format
+msgid "File content type '{mime}' is not allowed for '.{ext}' files."
+msgstr "Typ zawartości pliku '{mime}' jest niedozwolony dla plików '.{ext}'."
+
+msgid "Category must be empty for this subject."
+msgstr "Kategoria musi być pusta dla tego tematu."
+
+msgid "Category is required for this subject."
+msgstr "Kategoria jest wymagana dla tego tematu."
+
+msgid "Category is not allowed for this subject."
+msgstr "Kategoria nie jest dozwolona dla tego tematu."
+
+msgid "Uploaded file has no name."
+msgstr "Wczytany plik nie ma nazwy."

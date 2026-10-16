@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 import pytest
+from django.utils.timezone import localtime
 from falcon.testing.client import TestClient as FalconTestClient
 
 from mcod.core.tests.helpers.tasks import run_on_commit_events
@@ -72,6 +73,7 @@ def test_dataset_comment_created(
     assert expected_name in email_body
     expected_email = default_dataset_comment_data.get("applicant_email", "-")
     assert expected_email in email_body
+    assert localtime(event.submission_date).strftime("%Y-%m-%d %H:%M") in email_body
 
 
 @pytest.mark.parametrize("api_version", ["1.0", "1.4"])

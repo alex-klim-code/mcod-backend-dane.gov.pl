@@ -10,6 +10,7 @@ from model_utils import FieldTracker
 from modeltrans.fields import TranslationField
 
 from mcod.academy.managers import CourseManager, CourseTrashManager
+from mcod.academy.validators import CourseFileValidator
 from mcod.core import storages
 from mcod.core.db.managers import TrashManager
 from mcod.core.db.models import ExtendedModel, TrashModelBase
@@ -34,6 +35,7 @@ class Course(ExtendedModel):
         max_length=2000,
         null=True,
         blank=True,
+        validators=[CourseFileValidator()],
     )
     materials_file = models.FileField(
         verbose_name=_("materials file"),
@@ -42,6 +44,7 @@ class Course(ExtendedModel):
         max_length=2000,
         null=True,
         blank=True,
+        validators=[CourseFileValidator()],
     )
 
     objects = CourseManager()

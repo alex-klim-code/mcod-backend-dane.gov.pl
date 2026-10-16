@@ -1,4 +1,4 @@
-FROM python:3.8.16
+FROM python:3.8.20-bullseye
 
 ARG UID=1000
 ARG GID=1000
@@ -6,9 +6,12 @@ ARG UNAME=mcod
 
 ENV PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install -y software-properties-common \
-    && add-apt-repository "deb http://deb.debian.org/debian bullseye main contrib non-free"
-RUN apt-get update && apt-get install -y --allow-unauthenticated \
+RUN printf '%s\n' \
+    'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20240926T000000Z bullseye main contrib non-free' \
+    'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian-security/20240926T000000Z bullseye-security main contrib non-free' \
+    'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20240926T000000Z bullseye-updates main contrib non-free' \
+    > /etc/apt/sources.list
+RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y --allow-unauthenticated \
     gettext \
     locales \
     libarchive13 \

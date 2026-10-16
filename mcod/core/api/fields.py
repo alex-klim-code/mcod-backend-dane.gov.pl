@@ -517,7 +517,7 @@ class Base64ImageString(Base64String):
         INVALID_IMAGE: _("Invalid image file."),
         INVALID_MIME_TYPE: _("Unsupported image MIME type."),
         MIME_TYPE_MISMATCH: _("Declared image MIME type does not match file content."),
-        TOO_LONG: _("Image too big, max size is %(max_image_size)s bytes"),
+        TOO_LONG: _("File too big, max size is %(max_file_size)s bytes."),
     }
 
     @before_deserialize
@@ -529,7 +529,7 @@ class Base64ImageString(Base64String):
         except ImageValidationError as exc:
             logger.error(exc)
             if str(exc) == TOO_LONG:
-                self.error_messages[TOO_LONG] = self.error_messages[TOO_LONG] % {"max_image_size": settings.IMAGE_UPLOAD_MAX_SIZE}
+                self.error_messages[TOO_LONG] = self.error_messages[TOO_LONG] % {"max_file_size": settings.IMAGE_UPLOAD_MAX_SIZE}
             raise self.make_error(str(exc))
         return value, attr, data
 

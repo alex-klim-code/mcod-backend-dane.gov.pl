@@ -1,8 +1,7 @@
 import html
 from typing import Dict, List, Union
 
-import bleach
-from bleach.css_sanitizer import CSSSanitizer
+import nh3
 from ckeditor_uploader.fields import RichTextUploadingField as BaseRichTextUploadingField
 from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.fields.jsonb import JsonAdapter
@@ -10,52 +9,49 @@ from django.db import models
 from modeltrans.fields import TranslationField
 
 
-def sanitize_html(html_content: str, strip_comments=False) -> str:
+def sanitize_html(html_content: str, strip_comments: bool = False) -> str:
     """
-    Sanitizes the provided HTML content by removing or escaping disallowed tags, attributes, and styles.
+    Sanitize HTML content using explicit allowlists for tags, attributes,
+    URL schemes, and inline CSS properties.
 
-    This function uses the `bleach` library to clean the HTML content based on a predefined set of allowed tags,
-    attributes, and styles. It ensures that only the specified HTML elements and attributes are retained, and it
-    strips any unwanted content to prevent potential security risks, such as Cross-Site Scripting (XSS) attacks.
-    After cleaning, it applies `html.unescape` to convert HTML entities (like '&amp;') back to their original
-    characters (like '&').
+    Before sanitization, one layer of HTML entities is decoded so that encoded
+    HTML tags are parsed and sanitized instead of being treated as plain text.
+    Disallowed tags, attributes, URL schemes, and CSS properties are removed.
+    Text content inside disallowed elements may be preserved as non-executable text.
 
     Args:
-        html_content (str): The HTML content to be sanitized.
-        strip_comments (bool): Removes comments if `strip_comments` is set to `True`.
+        html_content: The HTML content to sanitize.
+        strip_comments: Whether HTML comments should be removed.
 
     Returns:
-        str: The sanitized HTML content with unescaped characters.
+        Sanitized HTML content.
 
-    Allowed Tags:
-        - a, abbr, acronym, address, b, br, blockquote, code, div, em, h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p,
-          pre, span, strong, table, caption, tbody, tr, td, ul.
+    Allowed tags:
+        a, abbr, acronym, address, b, br, blockquote, code, div, em,
+        h1, h2, h3, h4, h5, h6, hr, i, img, li, ol, p, pre, span,
+        strong, table, caption, tbody, tr, td, ul.
 
-    Allowed Attributes:
-        - Global attributes (applies to all tags): style.
-        - img: src, alt, title, width, height, rel.
+    Allowed attributes:
+        - Global: style.
         - a: href, title, target.
-        - table: align, border, caption, cellpadding, cellspacing, dir, width, height, id, summary.
-        - Plus any attributes specified in `bleach.sanitizer.ALLOWED_ATTRIBUTES`.
+        - abbr and acronym: title.
+        - img: src, alt, title, width, height.
+        - table: align, border, caption, cellpadding, cellspacing, dir,
+          width, height, id, summary.
 
-    Allowed Styles:
-        - color, background-color, font-family, font-weight, font-size, width, height, text-align, border, border-width,
-          border-style, border-color, border-radius, padding, padding-top, padding-right, padding-bottom, padding-left,
-          margin, margin-top, margin-right, margin-bottom, margin-left, text-decoration, line-height, font-style,
-          font-variant, letter-spacing, word-spacing, text-transform, white-space, vertical-align, list-style-type,
-          list-style-position, list-style-image.
-
-    Notes:
-        - The function strips any HTML tags that are not in the allowed list and removes comments if `strip_comments` is
-          set to `True`.
-        - It also ensures that only the allowed CSS properties are retained within the style attributes.
+    Allowed URL schemes:
+        http, https.
 
     Example:
-        input_str = "'';!--\"<XSS>=&{()}"
-        sanitized_content = sanitize_html(input_str)
-        # html.unescape returns: "'';!--"=&{()}"
+        input_html = (
+            '&lt;img src=x '
+            'onerror=&quot;alert(document.cookie)&quot;&gt;'
+        )
+
+        sanitize_html(input_html)
+        # Returns: '<img src="x">'
     """
-    allowed_tags = [
+    allowed_tags = {
         "a",
         "abbr",
         "acronym",
@@ -87,15 +83,28 @@ def sanitize_html(html_content: str, strip_comments=False) -> str:
         "tr",
         "td",
         "ul",
-    ]
-    allowed_attributes = {
-        **bleach.sanitizer.ALLOWED_ATTRIBUTES,
-        "*": ["style"],
-        "img": ["src", "alt", "title", "width", "height", "rel"],
-        "a": ["href", "title", "target"],
-        "table": ["align", "border", "caption", "cellpadding", "cellspacing", "dir", "width", "height", "id", "summary"],
     }
-    allowed_styles = [
+    allowed_attributes = {
+        "*": {"style"},
+        "a": {"href", "title", "target"},
+        "abbr": {"title"},
+        "acronym": {"title"},
+        "img": {"src", "alt", "title", "width", "height"},
+        "table": {
+            "align",
+            "border",
+            "caption",
+            "cellpadding",
+            "cellspacing",
+            "dir",
+            "width",
+            "height",
+            "id",
+            "summary",
+        },
+    }
+
+    allowed_styles = {
         "color",
         "background-color",
         "font-family",
@@ -131,19 +140,21 @@ def sanitize_html(html_content: str, strip_comments=False) -> str:
         "list-style-type",
         "list-style-position",
         "list-style-image",
-    ]
+    }
 
-    css_sanitizer = CSSSanitizer(allowed_css_properties=allowed_styles)
-
-    sanitized_html = bleach.clean(
-        html_content,
+    cleaner = nh3.Cleaner(
         tags=allowed_tags,
         attributes=allowed_attributes,
-        css_sanitizer=css_sanitizer,
-        strip=True,
+        clean_content_tags=set(),
+        filter_style_properties=allowed_styles,
+        url_schemes={"http", "https"},
         strip_comments=strip_comments,
+        link_rel="noopener",
     )
-    return html.unescape(sanitized_html)
+
+    decoded_html = html.unescape(html_content)
+
+    return cleaner.clean(decoded_html)
 
 
 class SanitizedCharField(models.CharField):

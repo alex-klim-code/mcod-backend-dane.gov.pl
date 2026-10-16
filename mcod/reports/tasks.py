@@ -48,6 +48,10 @@ from mcod.resources.serializers import ResourceCSVSchema
 from mcod.resources.tasks import validate_link
 from mcod.schedules.serializers import UserScheduleItemCSVSerializer
 from mcod.showcases.serializers import ShowcaseProposalCSVSerializer
+from mcod.submissions.tasks import (
+    generate_statistical_report_for_all_submissions_task,
+    generate_submission_unit_report_task,
+)
 from mcod.suggestions.serializers import (
     DatasetCommentCSVSerializer,
     DatasetSubmissionCSVSerializer,
@@ -659,6 +663,8 @@ else:
 @task_failure.connect(sender=create_resources_report_task)
 @task_failure.connect(sender=generate_harvesters_imports_report)
 @task_failure.connect(sender=generate_harvesters_last_imports_report)
+@task_failure.connect(sender=generate_submission_unit_report_task)
+@task_failure.connect(sender=generate_statistical_report_for_all_submissions_task)
 def generating_report_failure(sender, task_id, exception, args, traceback, einfo, signal, **kwargs):
     logger.debug(f"generating report failed with:\n{exception}")
     try:

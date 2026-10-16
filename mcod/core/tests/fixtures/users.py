@@ -2,6 +2,7 @@ import datetime
 import json
 
 import pytest
+from django.test import Client
 
 from mcod.core.registries import factories_registry
 from mcod.datasets.factories import DatasetFactory
@@ -94,6 +95,13 @@ def active_editor_without_org(test_password: str):
 @pytest.fixture
 def admin(test_password: str):
     return AdminFactory.create(email="admin@dane.gov.pl", password=test_password, phone="0048123456789")
+
+
+@pytest.fixture
+def django_admin_client(admin) -> Client:
+    client = Client()
+    client.force_login(admin)
+    return client
 
 
 @pytest.fixture

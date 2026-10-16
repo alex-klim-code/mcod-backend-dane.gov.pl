@@ -20,7 +20,7 @@ from django.dispatch import receiver
 from django.template.loader import render_to_string
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
-from django.utils.timezone import now
+from django.utils.timezone import localtime, now
 from django.utils.translation import get_language, gettext_lazy as _, override
 from model_utils import FieldTracker
 
@@ -42,6 +42,7 @@ from mcod.lib.model_sanitization import (
 )
 from mcod.regions.models import Region
 from mcod.submissions.models import SubmissionEvent
+from mcod.submissions.service import build_email_subject
 from mcod.suggestions.models import DatasetComment
 from mcod.watchers.tasks import update_model_watcher_task
 
@@ -689,17 +690,21 @@ class Dataset(ExtendedModel):
                 "submission_event_id_display": str(event.id) if event else "-",
                 "reference_id": f"UwagaDoZbioru_{dataset_comment.id}",
                 "submission_date_display": (
-                    event.submission_date.strftime("%Y-%m-%d %H:%M") if event and event.submission_date else "-"
+                    localtime(event.submission_date).strftime("%Y-%m-%d %H:%M") if event and event.submission_date else "-"
                 ),
                 "subject_display": event.display_subject if event else "-",
                 "category_display": event.display_category if event else "-",
                 "applicant_full_name": applicant_full_name or "-",
                 "applicant_email_display": applicant_email or "-",
             }
-            subject = _("A comment was posted on the data set %(title)s%(version)s") % {
-                "title": title,
-                "version": version,
-            }
+            subject = build_email_subject(
+                _("A comment was posted on the data set %(title)s%(version)s")
+                % {
+                    "title": title,
+                    "version": version,
+                },
+                event,
+            )
             _plain = "mails/dataset-comment.txt"
             _html = "mails/dataset-comment.html"
             msg_plain = render_to_string(_plain, context=context)

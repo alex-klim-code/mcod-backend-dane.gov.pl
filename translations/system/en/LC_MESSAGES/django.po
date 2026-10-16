@@ -554,7 +554,7 @@ msgid "Declared image MIME type does not match file content."
 msgstr ""
 
 #, python-format
-msgid "Image too big, max size is %(max_image_size)s bytes"
+msgid "File too big, max size is %(max_file_size)s bytes."
 msgstr ""
 
 msgid "Not a valid URL."
@@ -2992,6 +2992,10 @@ msgstr ""
 msgid "Invalid file extension: %(ext)s."
 msgstr ""
 
+#, python-format
+msgid "File %(name)s has no extension."
+msgstr ""
+
 msgid "Password protected archives are not allowed."
 msgstr ""
 
@@ -5101,4 +5105,40 @@ msgid "Submission Event"
 msgstr ""
 
 msgid "Submission Events"
+msgstr ""
+
+msgid "Your submission has been received."
+msgstr ""
+
+msgid "Missing 'data' part in multipart request."
+msgstr ""
+
+msgid "Invalid JSON in 'data' part."
+msgstr ""
+
+#, python-brace-format
+msgid "Maximum {count} files allowed per request. Got {actual}."
+msgstr ""
+
+#, python-brace-format
+msgid "File extension '.{ext}' is not allowed."
+msgstr ""
+
+msgid "Combined file size must not exceed 30 MB."
+msgstr ""
+
+#, python-brace-format
+msgid "File content type '{mime}' is not allowed for '.{ext}' files."
+msgstr ""
+
+msgid "Category must be empty for this subject."
+msgstr ""
+
+msgid "Category is required for this subject."
+msgstr ""
+
+msgid "Category is not allowed for this subject."
+msgstr ""
+
+msgid "Uploaded file has no name."
 msgstr ""

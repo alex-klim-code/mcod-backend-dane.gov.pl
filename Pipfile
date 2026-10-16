@@ -20,7 +20,7 @@ querystring-parser = "~=1.2"
 python-magic = "~=0.4"
 rules = "~=3.5"
 celery = "~=5.5.3"
-goodtables = {version = "~=2.1", extras = ["ods"]}
+goodtables = {version = "==2.1.4", extras = ["ods"]}
 passlib = "~=1.7"
 markdown2 = "~=2.5"
 marshmallow-jsonapi = "~=0.24"
@@ -103,7 +103,6 @@ rarfile = "~=4.2"
 py7zr = "~=0.22"
 numpy = "~=1.23"
 fake-useragent = "~=1.5"
-bleach = {version = "~=6.1", extras = ["css"]}
 tzlocal = "~=5.2"
 unleashclient = "~=6.7.0"
 urllib3 = "~=1.26"
@@ -119,6 +118,7 @@ channels = "~=2.4"  # Max for django < 3.0
 cython = "~=3.0"
 deepdiff = "~=8.1"
 django-axes = "*"
+nh3 = "~=0.3.7"
 
 [dev-packages]
 flake8 = "~=7.0"  # last version supporting python 3.8.1

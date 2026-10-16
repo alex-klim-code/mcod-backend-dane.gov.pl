@@ -1,7 +1,7 @@
 import string
 from collections import OrderedDict
 from datetime import date
-from typing import Optional
+from typing import Dict, FrozenSet, Optional
 
 import environ
 import sentry_sdk
@@ -650,6 +650,11 @@ SUIT_CONFIG = {
             "permissions": "auth.add_user",
             "models": [
                 {
+                    "model": "submissions.submissionevent",
+                    "label": "Wszystkie zgłoszenia",
+                    "permissions": "auth.add_user",
+                },
+                {
                     "model": "applications.applicationproposal",
                     "permissions": "auth.add_user",
                     "url": "/applications/applicationproposal/?decision=not_taken",
@@ -691,6 +696,7 @@ SUIT_CONFIG = {
         "alerts",
         "constance",
         "django_celery_results",
+        "submissions",
     ],
 }
 
@@ -739,6 +745,37 @@ CKEDITOR_CONFIGS = {
             ["RemoveFormat", "Source"],
         ],
         "removeButtons": "Image",
+        "height": 300,
+        "width": "100%",
+    },
+    "cms_local_images": {
+        "toolbar": "Custom",
+        "toolbar_Custom": [
+            ["Styles", "Format", "Bold", "Italic", "Underline", "Strike", "-", "Undo", "Redo"],
+            [
+                "NumberedList",
+                "BulletedList",
+                "-",
+                "Outdent",
+                "Indent",
+                "-",
+                "JustifyLeft",
+                "JustifyCenter",
+                "JustifyRight",
+                "JustifyBlock",
+            ],
+            ["Link", "Unlink", "Image", "Table"],
+            ["TextColor", "BGColor", "Smiley", "SpecialChar"],
+            [
+                "Attachments",
+            ],
+            ["RemoveFormat", "Source"],
+        ],
+        "filebrowserBrowseUrl": "/ckeditor/browse/?type=Images",
+        "filebrowserUploadUrl": "/ckeditor/upload/?type=Images",
+        "filebrowserImageBrowseUrl": "/ckeditor/browse/?type=Images",
+        "filebrowserImageUploadUrl": "/ckeditor/upload/?type=Images",
+        "image_previewText": "",
         "height": 300,
         "width": "100%",
     },
@@ -801,7 +838,7 @@ CKEDITOR_CONFIGS = {
     },
 }
 
-CKEDITOR_ALLOW_NONIMAGE_FILES = True
+CKEDITOR_ALLOW_NONIMAGE_FILES = env("CKEDITOR_ALLOW_NONIMAGE_FILES", default=False)
 
 TOKEN_EXPIRATION_TIME = env("TOKEN_EXPIRATION_TIME", default=72)  # In hours
 
@@ -926,6 +963,8 @@ CELERY_TASK_ROUTES = {
     "mcod.reports.tasks.generate_broken_links_reports_task": {"queue": "reports"},
     "mcod.reports.tasks.generate_admin_broken_links_report_task": {"queue": "reports"},
     "mcod.reports.tasks.generate_public_broken_links_reports_task": {"queue": "reports"},
+    "mcod.submissions.tasks.generate_submission_unit_report_task": {"queue": "reports"},
+    "mcod.submissions.tasks.generate_statistical_report_for_all_submissions_task": {"queue": "reports"},
     "mcod.resources.tasks.check_link_protocol": {"queue": "resources"},
     "mcod.resources.tasks.create_main_dga_resource_task": {"queue": "resources"},
     "mcod.resources.tasks.delete_es_resource_tabular_data_index": {"queue": "indexing_data"},
@@ -957,6 +996,7 @@ CELERY_TASK_ROUTES = {
     "mcod.suggestions.tasks.send_dataset_suggestion_mail_task": {"queue": "notifications"},
     "mcod.suggestions.tasks.send_data_suggestion": {"queue": "notifications"},
     "mcod.suggestions.tasks.send_accepted_submission_comment": {"queue": "notifications"},
+    "mcod.submissions.tasks.send_generic_submission_email_task": {"queue": "notifications"},
     "mcod.users.tasks.send_registration_email_task": {"queue": "notifications"},
     "mcod.watchers.tasks.model_watcher_updated_task": {"queue": "watchers"},
     "mcod.watchers.tasks.remove_user_notifications_task": {"queue": "watchers"},
@@ -1142,6 +1182,9 @@ LOGGING = {
     },
 }
 
+if ENVIRONMENT == "local":
+    LOGGING["loggers"]["signals"]["handlers"] = ["signals-console-handler"]
+
 CELERYD_HIJACK_ROOT_LOGGER = False
 
 SUPPORTED_CONTENT_TYPES = [
@@ -1273,6 +1316,20 @@ SUPPORTED_CONTENT_TYPES = [
 
 CONTENT_TYPE_TO_EXTENSION_MAP = [(x[0], x[1], x[2]) for x in SUPPORTED_CONTENT_TYPES]
 CONTENT_TYPE_TO_EXTENSION_MAP.extend([("application", "zip", ("zip",))])
+
+
+def _build_extension_to_mime_type_map() -> Dict[str, FrozenSet[str]]:
+    result: Dict[str, set] = {}
+    for family, mime_subtype, extensions in CONTENT_TYPE_TO_EXTENSION_MAP:
+        mime = f"{family}/{mime_subtype}"
+        for ext in extensions:
+            result.setdefault(ext, set()).add(mime)
+    # libmagic commonly classifies textual CSV files as plain text.
+    result.setdefault("csv", set()).add("text/plain")
+    return {ext: frozenset(mimes) for ext, mimes in result.items()}
+
+
+EXTENSION_TO_MIME_TYPE_MAP: Dict[str, FrozenSet[str]] = _build_extension_to_mime_type_map()
 
 ARCHIVE_RAR_CONTENT_TYPES = {
     "rar",
@@ -2266,3 +2323,18 @@ CSP_FONT_SRC = env.list("CSP_FONT_SRC", default=["'self'"])
 CSP_DEFAULT_SRC = env.list("CSP_DEFAULT_SRC", default=["'self'"])
 
 LOGIN_REDIRECT_URL = "/"
+
+# Contact Forms
+GENERIC_SUBMISSION_MAX_ATTACHMENT_COUNT = env.int("GENERIC_SUBMISSION_MAX_ATTACHMENT_COUNT", default=3)
+GENERIC_SUBMISSION_MAX_TOTAL_ATTACHMENT_SIZE_BYTES = env.int(
+    "GENERIC_SUBMISSION_MAX_TOTAL_ATTACHMENT_SIZE_BYTES", default=30_000_000
+)
+_DEFAULT_ALLOWED_EXTENSIONS = ["png", "jpg", "jpeg", "doc", "docx", "pdf", "xls", "xlsx", "csv", "xml", "zip"]
+GENERIC_SUBMISSION_ALLOWED_EXTENSION_MIME_TYPES: FrozenSet[str] = frozenset(
+    env.list("GENERIC_SUBMISSION_ALLOWED_EXTENSION_MIME_TYPES", default=_DEFAULT_ALLOWED_EXTENSIONS)
+)
+GENERIC_SUBMISSION_STAGING_ROOT = env.str(
+    "GENERIC_SUBMISSION_STAGING_ROOT", default=str(ROOT_DIR.path(MEDIA_ROOT, "submission_staging"))
+)
+GENERIC_SUBMISSION_EMAIL_MAX_RETRIES = env.int("GENERIC_SUBMISSION_EMAIL_MAX_RETRIES", default=3)
+GENERIC_SUBMISSION_EMAIL_RETRY_DELAY = env.int("GENERIC_SUBMISSION_EMAIL_RETRY_DELAY", default=60)

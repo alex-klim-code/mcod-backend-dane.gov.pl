@@ -6,6 +6,8 @@ from typing import List, Optional
 from unittest import mock
 from unittest.mock import MagicMock, call, patch
 
+import factory
+import numpy as np
 import pandas as pd
 import pytest
 from django.conf import settings
@@ -14,11 +16,13 @@ from pytest_mock import MockerFixture
 
 from mcod.datasets.factories import DatasetFactory
 from mcod.datasets.models import Dataset
+from mcod.lib.model_sanitization import sanitize_html
 from mcod.organizations.factories import OrganizationFactory
 from mcod.organizations.models import Organization
 from mcod.resources.dga_utils import (
     FailedValidationException,
     PendingValidationException,
+    _normalize_main_dga_source_df,
     add_style_to_main_dga_excel_file,
     check_all_resource_validations_status,
     clean_up_after_main_dga_resource_creation,
@@ -35,7 +39,7 @@ from mcod.resources.dga_utils import (
 )
 from mcod.resources.factories import DGAResourceFactory, MainDGAResourceFactory, ResourceFactory
 from mcod.resources.models import AggregatedDGAInfo, Resource, ResourceFile
-from mcod.resources.tasks import create_main_dga_resource_task
+from mcod.resources.tasks import create_main_dga_resource_task, process_resource_file_data_task
 
 
 @pytest.mark.feat_main_dga
@@ -71,7 +75,7 @@ def test_create_main_dga_dataset(main_dga_owner_organization: Organization):
 
     dataset: Dataset = Dataset.objects.get(pk=dataset_pk)
     assert dataset.title == settings.MAIN_DGA_DATASET_DEFAULT_TITLE
-    assert dataset.notes == settings.MAIN_DGA_DATASET_DEFAULT_DESC
+    assert dataset.notes == sanitize_html(settings.MAIN_DGA_DATASET_DEFAULT_DESC)
     assert dataset.organization == main_dga_owner_organization
     assert dataset.update_notification_recipient_email == settings.MAIN_DGA_DATASET_UPDATE_NOTIFICATION_EMAIL
     assert dataset.has_dynamic_data is False
@@ -359,11 +363,20 @@ def test_create_empty_main_dga_df():
                 }
             ],
         ),
+        (
+            [
+                {"col1": 1, "col2": 3, "col3": "foo"},
+                {"col1": 2, "col2": 5, "col3": "bar"},
+                {"col1": -1, "col2": 7, "col3": "baz"},
+            ],
+            [],
+        ),
     ],
     ids=[
         "skips-resource-with-none-required-value",
         "skips-resource-with-empty-required-value-after-strip",
         "coerces-non-string-required-value-and-strips-whitespace",
+        "skips-resource-with-missing-required-columns",
     ],
 )
 def test_create_main_dga_df_validates_and_coerces_required_values(rows, expected_records):
@@ -385,6 +398,74 @@ def test_create_main_dga_df_validates_and_coerces_required_values(rows, expected
     mock_qs = make_qs(resource)
     df = create_main_dga_df(mock_qs)
     assert df.to_dict("records") == expected_records
+
+
+@pytest.mark.elasticsearch
+@pytest.mark.feat_main_dga
+def test_create_main_dga_df_skips_real_csv_with_missing_required_columns():
+    resource = ResourceFactory.create(
+        title="CSV but not DGA",
+        type="file",
+        format="csv",
+        status="published",
+        contains_protected_data=True,
+        data_tasks_last_status="SUCCESS",
+        file_tasks_last_status="SUCCESS",
+        link_tasks_last_status="SUCCESS",
+        main_file__file=factory.django.FileField(
+            from_path=Path(settings.TEST_SAMPLES_PATH, "dga_non_dga_repro.csv"),
+            filename="dga_non_dga_repro.csv",
+        ),
+    )
+    process_resource_file_data_task(resource.pk)
+    resource.refresh_from_db()
+
+    source_rows = resource.tabular_data.table.read(keyed=True)
+    assert source_rows == [
+        {"col1": 1, "col2": 3, "col3": "foo"},
+        {"col1": 2, "col2": 5, "col3": "bar"},
+        {"col1": -1, "col2": 7, "col3": "baz"},
+    ]
+
+    df = create_main_dga_df(Resource.objects.filter(pk=resource.pk))
+
+    assert df.empty
+
+
+@pytest.mark.feat_main_dga
+@pytest.mark.parametrize(
+    ("values", "expected"),
+    [
+        (
+            [" foo ", " bar "],
+            ["foo", "bar"],
+        ),
+        (
+            [" foo ", np.nan],
+            ["foo", np.nan],
+        ),
+        (
+            [np.nan, np.nan],
+            [np.nan, np.nan],
+        ),
+    ],
+)
+def test_normalize_main_dga_source_df_strips_only_columns_with_values(values, expected):
+    df = pd.DataFrame(
+        {
+            "Zasób chronionych danych": values,
+            "Format danych": [" csv ", " xml "],
+            "Rozmiar danych": [" 10 MB ", " 20 MB "],
+        }
+    )
+
+    result = _normalize_main_dga_source_df(df)
+
+    pd.testing.assert_series_equal(
+        result["Zasób chronionych danych"],
+        pd.Series(expected, name="Zasób chronionych danych"),
+        check_dtype=False,
+    )
 
 
 @pytest.mark.feat_main_dga
@@ -463,7 +544,7 @@ def test_create_main_dga_resource_with_dataset(
     dataset = Dataset.objects.get(pk=dataset_pk)
 
     assert resource.title == settings.MAIN_DGA_RESOURCE_DEFAULT_TITLE
-    assert resource.description == settings.MAIN_DGA_RESOURCE_DEFAULT_DESC
+    assert resource.description == sanitize_html(settings.MAIN_DGA_RESOURCE_DEFAULT_DESC)
     assert resource.dataset == dataset
     assert resource.dataset.institution == main_dga_owner_organization
     assert resource.has_dynamic_data is False

@@ -186,6 +186,7 @@ class DatasetSubmission(DatasetSubmissionMixin):
     def send_dataset_suggestion_mail(self, submission_event_id=None, applicant_full_name=None, applicant_email=None):
         """Send dataset suggestion notification email with submission event context."""
         from mcod.submissions.models import SubmissionEvent
+        from mcod.submissions.service import build_email_subject
 
         event: Optional[SubmissionEvent] = (
             SubmissionEvent.objects.filter(id=submission_event_id).first() if submission_event_id else None
@@ -197,7 +198,7 @@ class DatasetSubmission(DatasetSubmissionMixin):
             "submission_event_id_display": str(event.id) if event else "-",
             "reference_id": f"PropozycjaNowychDanych_{self.id}",
             "submission_date_display": (
-                event.submission_date.strftime("%Y-%m-%d %H:%M") if event and event.submission_date else "-"
+                timezone.localtime(event.submission_date).strftime("%Y-%m-%d %H:%M") if event and event.submission_date else "-"
             ),
             "subject_display": event.display_subject if event else "-",
             "category_display": event.display_category if event else "-",
@@ -205,7 +206,7 @@ class DatasetSubmission(DatasetSubmissionMixin):
             "applicant_email_display": applicant_email or "-",
         }
         return self.send_mail_message(
-            _("Resource demand reported"),
+            build_email_subject(_("Resource demand reported"), event),
             context,
             "mails/dataset-suggestion.txt",
             "mails/dataset-suggestion.html",

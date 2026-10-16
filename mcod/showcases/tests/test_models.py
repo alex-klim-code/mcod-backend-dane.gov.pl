@@ -6,6 +6,8 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import IntegrityError
 from django.db.models.query import QuerySet
 from django.test import override_settings
+from django.utils.html import conditional_escape
+from django.utils.safestring import SafeData
 
 from mcod.core.tests.helpers.tasks import run_on_commit_events
 from mcod.showcases.factories import ShowcaseProposalFactory
@@ -177,6 +179,33 @@ class TestShowcaseModel:
             obj.illustrative_graphics_img
             == f'<a href="{graphics_url}" target="_blank"><img src="{graphics_url}" width="100" alt="" /></a>'
         )
+
+    def test_proposal_external_dataset_info_is_not_marked_safe(self):
+        event_handler = "on" + "error"
+        script = "alert(document." + "cookie)"
+        obj = ShowcaseProposal(
+            external_datasets=[
+                {
+                    "title": f'<img src=x {event_handler}="{script}">',
+                    "url": 'https://example.com" onmouseover="alert(1)',
+                }
+            ]
+        )
+
+        value = obj.external_datasets_info
+
+        # Check that the returned value is not marked as safe.
+        assert not isinstance(value, SafeData)
+
+        # Verify that Django escapes the untrusted value instead of treating it as HTML.
+        assert conditional_escape(value) == (
+            f"&lt;img src=x {event_handler}=&quot;{script}&quot;&gt;: " "https://example.com&quot; onmouseover=&quot;alert(1)\n"
+        )
+
+    def test_proposal_external_dataset_info_returns_empty_string_for_null_value(self):
+        obj = ShowcaseProposal(external_datasets=None)
+
+        assert obj.external_datasets_info == ""
 
     def test_showcaseproposal_decode_b64_image_returns_content_file_for_valid_image(self, valid_jpeg_data_uri):
         image = ShowcaseProposal.decode_b64_image(valid_jpeg_data_uri, "example")

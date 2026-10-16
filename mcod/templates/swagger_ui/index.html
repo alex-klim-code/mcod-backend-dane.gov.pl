@@ -107,8 +107,46 @@
                   }
               }
           };
+
+          function customizeTopbar() {
+              const topbar = document.getElementsByClassName('topbar-wrapper')[0];
+
+              if (!topbar) {
+                  return;
+              }
+
+              const span = topbar.getElementsByTagName('span')[0];
+
+              if (span && span.parentNode) {
+                  span.parentNode.removeChild(span);
+              }
+
+              const link = topbar.getElementsByTagName('a')[0];
+
+              if (!link) {
+                  return;
+              }
+
+              let img = link.getElementsByTagName('img')[0];
+
+              if (!img) {
+                  img = document.createElement('img');
+              }
+
+              while (link.firstChild) {
+                  link.removeChild(link.firstChild);
+              }
+
+              link.appendChild(img);
+
+              img.src = '/static/images/logo-175x50-white.png';
+              img.alt = 'Otwarte Dane';
+              img.height = 50;
+              img.width = 175;
+          }
+
           // Begin Swagger UI call region
-          const ui = SwaggerUIBundle({
+          window.ui = SwaggerUIBundle({
               urls: {{ spec_urls|safe }},
               dom_id: '#swagger-ui',
               deepLinking: true,
@@ -128,19 +166,10 @@
                   replace_tag_name("h3.opblock-tag", "h2");
                   replace_tag_name("h4", "h3");
                   replace_tag_name("h5", "h4");
+                  customizeTopbar();
               }
           });
           // End Swagger UI call region
-          window.ui = ui;
-
-          topbar = document.getElementsByClassName('topbar-wrapper')[0];
-          span = topbar.getElementsByTagName('span')[0];
-          span.parentNode.removeChild(span);
-          img = topbar.getElementsByTagName('img')[0];
-          img.src = '/static/images/logo-175x50-white.png';
-          img.alt = 'Otwarte Dane';
-          img.height = 50;
-          img.width = 175;
       }
     </script>
     <footer class="swagger-ui swagger-container">

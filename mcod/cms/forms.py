@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import django.forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -20,6 +22,7 @@ from mcod.cms.blocks.forms import (
     RadioButtonWithMultilineInputBlock,
     SinglelineTextInput,
 )
+from mcod.lib.widgets import CKEditorUploadingWidget
 
 
 class SelectDateForm(django.forms.Form):
@@ -122,6 +125,23 @@ class FormPageForm(WagtailAdminPageForm):
                         formsets_are_valid = False
 
         return form_is_valid and formsets_are_valid
+
+
+class NewsPageForm(WagtailAdminPageForm):
+    """Wagtail form for ``NewsPage`` with CKEditor image upload enabled."""
+
+    CKEDITOR_FIELDS: Tuple[str, ...] = ("body", "body_en")
+
+    def __init__(self, *args, **kwargs) -> None:
+        """Replace default CKEditor widgets with the uploading CMS profile."""
+        super().__init__(*args, **kwargs)
+        self._configure_ckeditor_widgets()
+
+    def _configure_ckeditor_widgets(self) -> None:
+        """Attach the CMS CKEditor uploader widget to supported rich text fields."""
+        for field_name in self.CKEDITOR_FIELDS:
+            if field_name in self.fields:
+                self.fields[field_name].widget = CKEditorUploadingWidget(config_name="cms_local_images")
 
 
 class TitleChooserForm(django.forms.Form):

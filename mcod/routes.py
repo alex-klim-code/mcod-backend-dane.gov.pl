@@ -13,6 +13,7 @@ from mcod.schedules import views as schedules_views
 from mcod.search import views as search_views
 from mcod.searchhistories import views as searchhistory_views
 from mcod.showcases import views as showcases_views
+from mcod.submissions import views as generic_submission_views
 from mcod.suggestions import views as submission_views
 from mcod.tools import views as tools_views
 from mcod.users import views as user_views
@@ -172,6 +173,7 @@ routes = [
     ("/searchhistories", searchhistory_views.SearchHistoriesView()),
     ("/submissions", submission_views.SubmissionView()),
     ("/submissions/accepted", submission_views.AcceptedSubmissionListView()),
+    ("/submissions/generic", generic_submission_views.GenericSubmissionView()),
     ("/submissions/accepted/{id:int}", submission_views.AcceptedSubmissionDetailView()),
     (
         "/submissions/accepted/{id:int}/feedback",

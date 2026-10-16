@@ -2,10 +2,32 @@ import os
 
 from django.conf import settings
 from django.test import override_settings
+from django.utils.timezone import localtime
 from django.utils.translation import override
 
+from mcod.showcases.factories import ShowcaseProposalFactory
 from mcod.showcases.models import ShowcaseProposal
 from mcod.showcases.tasks import send_showcase_proposal_mail_task
+from mcod.submissions.factories import SubmissionEventFactory
+
+
+def test_showcase_proposal_mail_shows_submission_date_in_local_time(mailoutbox):
+    proposal = ShowcaseProposalFactory.create()
+    event = SubmissionEventFactory.create()
+
+    send_showcase_proposal_mail_task(proposal.id, submission_event_id=event.id, applicant_full_name="Jan Kowalski")
+
+    assert len(mailoutbox) == 1
+    assert localtime(event.submission_date).strftime("%Y-%m-%d %H:%M") in mailoutbox[0].body
+    assert mailoutbox[0].subject == f"Powiadomienie - Nowe zgłoszenie PoCoTo | ID: {event.id}"
+
+
+def test_showcase_proposal_mail_subject_without_event(mailoutbox):
+    proposal = ShowcaseProposalFactory.create()
+
+    send_showcase_proposal_mail_task(proposal.id, submission_event_id=None, applicant_full_name="Jan Kowalski")
+
+    assert mailoutbox[0].subject == "Powiadomienie - Nowe zgłoszenie PoCoTo"
 
 
 class TestApplicationsTasks:

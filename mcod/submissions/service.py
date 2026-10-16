@@ -37,3 +37,7 @@ def create_submission_event(
         return None
 
     return event
+
+
+def build_email_subject(base: str, event: Optional[SubmissionEvent]) -> str:
+    return f"{base} | ID: {event.pk}" if event else base

@@ -15,6 +15,7 @@ from django.forms.models import model_to_dict
 from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from model_utils import FieldTracker
 from modeltrans.fields import TranslationField
@@ -293,14 +294,9 @@ class ShowcaseProposal(ShowcaseMixin):
         return self.mark_safe(res)
 
     @property
-    def external_datasets_links(self):
-        data = [[x.get("url"), x.get("title") or x.get("url")] for x in self.external_datasets]
-        return self.mark_safe("<br>".join([f'<a href="{x[0]}" target="_blank">{x[1]}</a>' for x in data]))
-
-    @property
     def external_datasets_info(self):
-        data = [[x.get("title") or x.get("url"), x.get("url")] for x in self.external_datasets]
-        return self.mark_safe("".join([f"{x[0]}: {x[1]}\n" for x in data]))
+        data = [[x.get("title") or x.get("url"), x.get("url")] for x in self.external_datasets or []]
+        return "".join([f"{x[0]}: {x[1]}\n" for x in data])
 
     @cached_property
     def image_absolute_url(self):
@@ -409,6 +405,7 @@ class ShowcaseProposal(ShowcaseMixin):
     def send_showcase_proposal_mail(self, submission_event_id: Optional[int] = None, applicant_full_name: Optional[str] = None):
         """Send PoCoTo proposal notification email with submission event context."""
         from mcod.submissions.models import SubmissionEvent
+        from mcod.submissions.service import build_email_subject
 
         event: Optional[SubmissionEvent] = (
             SubmissionEvent.objects.filter(id=submission_event_id).first() if submission_event_id else None
@@ -419,7 +416,7 @@ class ShowcaseProposal(ShowcaseMixin):
             "submission_event_id_display": str(event.id) if event else "-",
             "reference_id": f"PoCoTo_{self.id}",
             "submission_date_display": (
-                event.submission_date.strftime("%Y-%m-%d %H:%M") if event and event.submission_date else "-"
+                localtime(event.submission_date).strftime("%Y-%m-%d %H:%M") if event and event.submission_date else "-"
             ),
             "subject_display": event.display_subject if event else "-",
             "category_display": event.display_category if event else "-",
@@ -428,7 +425,7 @@ class ShowcaseProposal(ShowcaseMixin):
         }
 
         self.send_mail_message(
-            "Powiadomienie - Nowe zgłoszenie PoCoTo",
+            build_email_subject("Powiadomienie - Nowe zgłoszenie PoCoTo", event),
             context,
             "mails/showcaseproposal.txt",
             "mails/showcaseproposal.html",

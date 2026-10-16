@@ -62,11 +62,10 @@ class MainDGAMissingRequiredColumnError(Exception):
 
     def __init__(self, column_names: Union[str, List[str]]):
         if isinstance(column_names, str):
-            message = column_names
-        else:
-            message = ", ".join(column_names)
-
+            column_names = [column_names]
         self.column_names = column_names
+        message = ", ".join(column_names)
+
         super().__init__(f"Missing required column(s): {message}")
 
 
@@ -350,8 +349,10 @@ def _normalize_main_dga_source_df(df: pd.DataFrame) -> pd.DataFrame:
             # Convert only the affected cells so later string operations are safe.
             df.loc[row_needs_string_conversion, column_name] = df.loc[row_needs_string_conversion, column_name].map(str)
 
-        # Trim surrounding whitespace from every non-null required value.
-        df.loc[row_has_value, column_name] = df.loc[row_has_value, column_name].str.strip()
+        # Strip whitespace only when the column contains at least one non-null value.
+        # An all-null column may be inferred as float64, which does not support the .str accessor.
+        if row_has_value.any():
+            df.loc[row_has_value, column_name] = df.loc[row_has_value, column_name].str.strip()
 
     return df
 
@@ -384,11 +385,13 @@ def get_main_dga_source_df(resource: "Resource") -> pd.DataFrame:  # noqa: F821
             raise MainDGAResourceReadError(f"Cannot read tabular data for resource {resource.pk}") from exc
 
         try:
-            df = pd.DataFrame(data, columns=MAIN_DGA_COLUMNS)
+            df = pd.DataFrame(data)
         except Exception as exc:
             raise MainDGAResourceReadError(f"Cannot create DataFrame for resource {resource.pk}") from exc
 
-    _validate_main_dga_source_columns(df)
+        _validate_main_dga_source_columns(df)
+        df = df.reindex(columns=MAIN_DGA_COLUMNS)
+
     df = _normalize_main_dga_source_df(df)
     _validate_main_dga_source_values(df)
 
@@ -416,9 +419,9 @@ def create_main_dga_df(resources: QuerySet) -> pd.DataFrame:
         except MainDGAMissingRequiredColumnError as exc:
             sentry_sdk.api.capture_exception(exc)
             logger.error(
-                "Skipping Main DGA source resource %s because it is missing required column %s.",
+                "Skipping Main DGA source resource %s because it is missing required column(s): %s.",
                 resource.pk,
-                exc.column_name,
+                ", ".join(exc.column_names),
             )
             continue
         except MainDGAEmptyRequiredValuesError as exc:

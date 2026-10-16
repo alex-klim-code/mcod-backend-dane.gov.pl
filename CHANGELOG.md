@@ -12,6 +12,82 @@ ______________________________________________________________________
 
 ### Breaks
 
+## 2.62.3 - (2026-10-12)
+
+______________________________________________________________________
+
+### New
+
+### Changes
+
+### Fixes
+
+- Uspójnienie tematów maili dla formularzy zgłoszeń - OTD-3261
+- Naprawa błędnej godziny zarejestrowania zgłoszenia w wiadomości e-mail - OTD-3264
+
+### Breaks
+
+## 2.62.2 - (2026-10-08)
+
+______________________________________________________________________
+
+### New
+
+### Changes
+
+### Fixes
+
+- Dodanie `text/plain` jako akceptowanego mimetype dla formatu .csv - OTD-3247
+
+### Breaks
+
+## 2.62.1 - (2026-10-05)
+
+______________________________________________________________________
+
+### New
+
+### Changes
+
+### Fixes
+
+- Wyświetlanie czasu generowania raportu - stosowanie czasu lokalnego - OTD-3206
+- Naprawa nazwy raportu jednostkowego CSV zgłoszeń - stosowanie czasu lokalnego - OTD-3209
+
+### Breaks
+
+## 2.62.0 - (2026-09-18)
+
+______________________________________________________________________
+
+### New
+
+- Zastąpiono Bleach biblioteką nh3 do sanityzacji HTML - OTD-3102
+- Dodano sanityzację zakodowanych payloadów przed zapisem - OTD-3102
+- Dodano walidację i escapowanie linków zewnętrznych zbiorów danych - OTD-3102
+- Dodanie walidacji wgrywanych plików przy dodawaniu kursów w Akademii Otwarte Dane w PA - OTD-1752
+- Dodanie sekcji Baner Facebook do strony głównej OD w CMS - OTD-2984
+- Wdrożenie widoku API do obsługi generycznych formularzy kontaktowych - OTD-2880
+- Implementacja mechanizmu wysyłki powiadomień e-mail dla generycznych formularzy kontaktowych - OTD-2881
+- Rozbudowa Panelu Administracyjnego o nową zakładkę „Wszystkie Zgłoszenia” - OTD-2857
+- Wprowadzenie funkcji generowania raportów jednostkowych dla Zgłoszeń w Panelu Administracyjnym - OTD-3065
+- Wprowadzenie funkcji generowania raportów statystycznych dla Zgłoszeń w Panelu Administracyjnym - OTD-3066
+
+### Changes
+
+- Aktualizacja Swagger do 5.32.14 - OTD-2582
+
+### Fixes
+
+- Naprawa błędu walidacji danych tabelarycznych dla zasobów z plikiem typu "excel" - OTD-2930
+- Usunięto oznaczanie treści e-mail jako bezpiecznego HTML - OTD-3102
+- Dodano testy regresyjne dla XSS i niebezpiecznych URL-i - OTD-3102
+- Naprawa dodawania elementów graficznych do formularzy za pomocą ikonki CKEditora lub "drag-and-drop" - OTD-2945
+- Naprawa generowania pliku Main DGA dla zasobów CSV z brakującymi wymaganymi kolumnami. Poprawna obsługa kolumn zawierających wyłącznie puste wartości (NaN) - OTD-2997
+- Naprawa niestabilnych buildów Docker w CI przez aktualizację bazy do python:3.8.20-bullseye oraz przypięcie APT do snapshotów Debiana - OTD-3120
+
+### Breaks
+
 ## 2.61.0 - (2026-08-26)
 
 ______________________________________________________________________

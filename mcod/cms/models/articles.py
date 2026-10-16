@@ -9,6 +9,7 @@ from wagtail.api import APIField
 
 from mcod.cms.api import fields
 from mcod.cms.api.serializers import NewsPageSerializer
+from mcod.cms.forms import NewsPageForm
 from mcod.cms.models.base import BasePage
 
 
@@ -42,6 +43,7 @@ class NewsPage(BasePage):
     parent_page_types = ["cms.NewsPageIndex"]
     subpage_types = []
     serializer_class = NewsPageSerializer
+    base_form_class = NewsPageForm
     indexable = True
 
     body = RichTextField(blank=True, verbose_name=_("Notes"))
