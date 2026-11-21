@@ -38,6 +38,14 @@ SESSION_COOKIE_NAME = "mcod_replit_session"
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = None
 CSRF_COOKIE_NAME = "csrftoken"
+# The Replit proxy keeps the browser's :5000 port in the HTTPS Referer, while
+# Django can see the same host without that external port. Django 2.2 compares
+# trusted origins as host strings, so trust only this Repl's preview hostname
+# on its configured external web port.
+_preview_domain = os.environ.get("REPLIT_DEV_DOMAIN", "").strip()
+CSRF_TRUSTED_ORIGINS = (
+    [f"{_preview_domain}:5000"] if _preview_domain else []
+)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"

@@ -52,29 +52,20 @@ waitForPort = 5000
 outputType = "webview"
 
 [[ports]]
-localPort = 5000
+localPort = 4369
 externalPort = 80
+exposeLocalhost = true
 
 [[ports]]
-localPort = 4369
-exposeLocalhost = false
+localPort = 5000
+externalPort = 5000
 
 [[ports]]
 localPort = 5672
-exposeLocalhost = false
-
-[[ports]]
-localPort = 6379
-exposeLocalhost = false
-
-[[ports]]
-localPort = 9200
-exposeLocalhost = false
-
-[[ports]]
-localPort = 9300
-exposeLocalhost = false
+externalPort = 3000
+exposeLocalhost = true
 
 [[ports]]
 localPort = 25672
-exposeLocalhost = false
+externalPort = 3001
+exposeLocalhost = true

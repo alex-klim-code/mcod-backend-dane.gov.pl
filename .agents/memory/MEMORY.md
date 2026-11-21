@@ -1,1 +1,2 @@
 - [Workflow restarts](workflow-restarts.md) — newly grouped workflows may leave old child processes alive; inspect duplicates instead of changing ports.
+- [Django CSRF preview origins](django-csrf-preview-origins.md) — Django 2.2 compares trusted preview hosts including the external port; trust the exact Repl hostname.
