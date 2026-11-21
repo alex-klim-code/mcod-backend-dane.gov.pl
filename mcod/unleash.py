@@ -11,13 +11,14 @@ unleash_client = None
 try:
     from UnleashClient import UnleashClient
 
-    unleash_client = UnleashClient(
-        url=settings.UNLEASH_URL,
-        app_name=settings.COMPONENT,
-        environment=settings.ENVIRONMENT,
-        custom_strategies={"environmentName": EnvironmentName()},
-    )
-    unleash_client.initialize_client()
+    if getattr(settings, "UNLEASH_ENABLED", True):
+        unleash_client = UnleashClient(
+            url=settings.UNLEASH_URL,
+            app_name=settings.COMPONENT,
+            environment=settings.ENVIRONMENT,
+            custom_strategies={"environmentName": EnvironmentName()},
+        )
+        unleash_client.initialize_client()
 
 except ImportError as exc:
     logger.debug(exc)

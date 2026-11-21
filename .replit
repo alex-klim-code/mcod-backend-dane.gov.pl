@@ -1,7 +1,80 @@
-modules = ["nodejs-20", "python-3.12", "web"]
+modules = ["nodejs-20", "python-3.12", "web", "postgresql-16"]
 
 [nix]
 channel = "stable-25_05"
+packages = ["uv", "redis", "rabbitmq-server", "jdk17", "libxml2", "libxslt", "xmlsec", "libarchive", "file", "gettext", "pkg-config", "imagemagick", "libxcrypt"]
 
 [agent]
 expertMode = true
+
+[userenv]
+
+[userenv.development]
+UV_PYTHON_DOWNLOADS = "manual"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Supporting services"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Django admin"
+
+[[workflows.workflow]]
+name = "Supporting services"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash scripts/replit/services.sh"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "Django admin"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash scripts/replit/start.sh"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 4369
+exposeLocalhost = false
+
+[[ports]]
+localPort = 5672
+exposeLocalhost = false
+
+[[ports]]
+localPort = 6379
+exposeLocalhost = false
+
+[[ports]]
+localPort = 9200
+exposeLocalhost = false
+
+[[ports]]
+localPort = 9300
+exposeLocalhost = false
+
+[[ports]]
+localPort = 25672
+exposeLocalhost = false

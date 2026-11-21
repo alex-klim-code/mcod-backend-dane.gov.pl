@@ -267,3 +267,7 @@ requeststest
 .ipynb_checkpoints/
 
 mcod/api_key.txt
+
+# Replit development runtime and generated setup output
+/.pythonlibs/
+/generated-artifacts/

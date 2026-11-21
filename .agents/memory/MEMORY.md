@@ -1,0 +1,1 @@
+- [Workflow restarts](workflow-restarts.md) — newly grouped workflows may leave old child processes alive; inspect duplicates instead of changing ports.
