@@ -134,6 +134,11 @@ gate startup, replace HTTP responses or declare the deployment healthy.
 See `docs/aed-integration/production-diagnosis.md`. Do not mistake local
 production-profile results for execution in the deployed image.
 
+User creation/password commands in the workspace Shell affect development,
+not the separate published database. Do not reset or re-copy production just
+to repair an account. Verify account presence, role/state and the actual login
+POST route before changing credentials or weakening login protections.
+
 Development and production databases, sessions, queues and search indexes are
 independent. Tests must use a separate test database, broker, search namespaces
 and isolated files, never the production database. Keep encryption/signing

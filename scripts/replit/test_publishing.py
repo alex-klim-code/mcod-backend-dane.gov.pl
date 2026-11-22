@@ -35,6 +35,18 @@ class PythonRuntimeTests(unittest.TestCase):
 
 
 class Upstream(BaseHTTPRequestHandler):
+    def do_POST(self):
+        body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+        if self.path == "/":
+            # Django's anonymous admin index redirects without authenticating.
+            self.send_response(302)
+            self.send_header("Location", "/login/?next=/")
+            body = b""
+        else:
+            self.send_response(200)
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
         if self.path == "/" and self.headers.get("Cookie") != "test-authenticated":
             self.send_response(302)
@@ -110,6 +122,33 @@ class PublishingTests(unittest.TestCase):
 
     def test_other_protected_pages_still_redirect_to_login(self):
         self.assertEqual(self.request("/resources/resource/")[0], 302)
+
+    def test_login_form_posts_to_named_login_route_not_current_page(self):
+        template = (ROOT / "mcod/templates/admin/login.html").read_text()
+        self.assertIn('action="{% url \'login\' %}"', template)
+        self.assertNotIn('action="{{ app_path }}"', template)
+
+    def test_old_root_form_preserves_post_instead_of_silent_get(self):
+        body = b"username=fixture&password=not-a-real-password&next=%2F"
+        connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        try:
+            connection.request("POST", "/", body=body, headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+            })
+            response = connection.getresponse()
+            self.assertEqual(response.status, 307)
+            target = response.getheader("Location")
+            self.assertEqual(target, "/login/")
+            response.read()
+            # A browser follows 307 using the SAME POST and body.
+            connection.request("POST", "/login/", body=body, headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+            })
+            response = connection.getresponse()
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.read(), body)
+        finally:
+            connection.close()
 
     def test_launchers_do_not_run_health_probes(self):
         for name in ("start.sh", "run-production.sh", "build.sh"):

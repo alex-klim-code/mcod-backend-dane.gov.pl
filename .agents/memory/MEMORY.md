@@ -5,3 +5,4 @@
 - [MCOD test isolation](mcod-test-isolation.md) — database rollback alone does not isolate broker callbacks, search indexes or stored files.
 - [Preview network routing](preview-network-routing.md) — public preview DNS can resolve to a private proxy IP; isolate own-app checks from public-source fetching.
 - [Native extension diagnostics](native-extension-diagnostics.md) — isolated imports can pass while nested Django initialization crashes; reproduce the full failing command.
+- [Root login forms](root-login-redirects.md) — a login page at / must keep its canonical POST target; internal redirects can silently discard submissions.

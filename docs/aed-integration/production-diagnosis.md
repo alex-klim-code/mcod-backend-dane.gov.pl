@@ -92,6 +92,28 @@ o zajęte porty. Zatrzymano wyłącznie rozpoznane stare grupy procesów Develop
 i przywrócono te same usługi oraz aplikację pod tymi samymi portami. Nie zmieniono
 konfiguracji ani stanu usług Production. Oba workflow Development ponownie działają.
 
+## Osobna poprawka: formularz nie wysyłał danych do logowania
+
+HTTP 200 formularza potwierdza dostępność strony, ale nie poprawność logowania.
+Późniejsza kontrola Production wykazała pusty `action` formularza. Na stronie
+głównej przeglądarka wysyłała więc `POST /`, a proxy zamieniało odpowiedź
+przekierowującą backendu w wewnętrzny GET formularza, gubiąc jego treść.
+Puste kontrolowane POST-y bez danych logowania potwierdziły różnicę:
+root zwracał formularz bez walidacji, a `/login/` pokazywał błędy wymaganych pól.
+
+Formularz ma teraz jawny adres nazwanej trasy logowania. Dla starych formularzy
+`POST /` zwraca względne `307 /login/`, zachowując metodę i treść bez zmiany
+originu HTTPS lub ujawniania wewnętrznego portu. Nie wyłączono CSRF ani Axes.
+Przeszło siedem testów konfiguracji publikowania, w tym nowe regresje.
+Rzeczywisty test Development potwierdził adres formularza, przekierowanie 307
+i walidację Django z zaakceptowanym tokenem CSRF.
+
+Odczyt Production potwierdził też brak dwóch wskazanych kont testowych.
+Nie utworzono ich ani nie zmieniono istniejących haseł. Konta i zmiany haseł
+z workspace Shell nie synchronizują się do osobnej bazy Production.
+Do czasu publikacji poprawki można omijać błąd formularza strony głównej,
+wchodząc bezpośrednio na `/login/`.
+
 ## Historyczne dowody z poprzedniej publikacji
 
 Nieudana rewizja: `3c2f1a6a-6692-4032-a192-0c5ef14a4cb4`.
