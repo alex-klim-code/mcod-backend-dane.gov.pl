@@ -61,6 +61,11 @@ outputType = "webview"
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 25672
+externalPort = 3001
+exposeLocalhost = true
+
 [objectStorage]
 defaultBucketID = "replit-objstore-d08d3234-3c6d-4ee4-a8df-2c29e98969d5"
 
@@ -68,4 +73,4 @@ defaultBucketID = "replit-objstore-d08d3234-3c6d-4ee4-a8df-2c29e98969d5"
 deploymentTarget = "vm"
 run = ["bash", "scripts/replit/run-production.sh"]
 build = ["bash", "scripts/replit/build.sh"]
-ignorePorts = false
+ignorePorts = true

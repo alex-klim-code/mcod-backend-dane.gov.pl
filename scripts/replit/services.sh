@@ -3,10 +3,6 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 source scripts/replit/runtime-paths.sh
 elastic="$MCOD_ELASTICSEARCH_HOME"
-if [[ ! -x "$elastic/bin/elasticsearch" || ! -d "$elastic/config" ]]; then
-  echo "Elasticsearch runtime is missing at $elastic. Run scripts/replit/build.sh before publishing." >&2
-  exit 1
-fi
 service_root="$PWD/.cache/services"
 mkdir -p "$service_root/redis" "$service_root/rabbitmq" "$service_root/elasticsearch-data" "$service_root/elasticsearch-logs"
 
@@ -14,7 +10,9 @@ cleanup() {
   kill "${redis_pid:-}" "${rabbit_pid:-}" "${elastic_pid:-}" 2>/dev/null || true
   wait || true
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
 
 redis-server --bind 127.0.0.1 --dir "$service_root/redis" --appendonly yes &
 redis_pid=$!

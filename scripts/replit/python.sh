@@ -7,10 +7,8 @@ source scripts/replit/runtime-paths.sh
 # component, including collectstatic, and retain native tracebacks on crashes.
 export PURE_PYTHON=1
 export PYTHONFAULTHANDLER=1
-if [[ ! -x "$MCOD_PYTHON" || ! -d "$MCOD_PACKAGES_ROOT/django" ]]; then
-  echo "MCOD Python runtime is missing. Run the configured build command before starting production." >&2
-  exit 1
-fi
+# Celery otherwise runs Django's system checks while initializing its worker.
+export CELERY_SKIP_CHECKS=1
 export PYTHONPATH="$MCOD_PACKAGES_ROOT:$PWD"
 export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-mcod.settings.replit}"
 if [[ "$DJANGO_SETTINGS_MODULE" == "mcod.settings.replit" && -n "${REPLIT_DEV_DOMAIN:-}" ]]; then

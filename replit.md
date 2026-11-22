@@ -16,7 +16,9 @@ Click **Run** to start the `Project` workflow. It starts:
   plugins. These services are private; only the web app is exposed.
 - `Django admin`: Nginx on `0.0.0.0:5000`, routing `/api/` to Falcon on
   `127.0.0.1:8000` and the admin to Django on `127.0.0.1:8001`; also runs
-  one Celery worker.
+  one Celery worker. Development and production use the same Daphne ASGI admin
+  server (the server behind the former Channels runserver), Gunicorn API and
+  shared `scripts/replit/start.sh` launcher.
 
 The preview redirects to `/login/`. No administrator account or default password
 has been created. Create your own account in the Replit Shell, where the password
@@ -55,8 +57,9 @@ It was **not** run here; no sample users or datasets were imported.
 
 ## Development configuration
 
-- `mcod.settings.replit` is selected by the wrapper. Existing local and production
-  settings are unchanged.
+- `mcod.settings.replit_common` contains the application settings used by both
+  Replit profiles. Only environment identity, hosts, public API address and
+  security/preview overrides belong in `replit` and `production_replit`.
 - The existing Replit `DATABASE_URL` provides PostgreSQL. Do not copy it into a file
   or log it. Existing upstream migrations were applied to the initially empty
   development database.
@@ -92,8 +95,10 @@ is running. The optional CMS can be started separately:
 COMPONENT=cms bash scripts/replit/python.sh manage.py runserver 0.0.0.0:8002
 ```
 
-The workflow creates missing institution/dataset/resource search indexes
-non-destructively and populates them from existing records. Full asynchronous
+The workflow initializes missing institution/dataset/resource search indexes
+non-destructively in the background and populates them from existing records.
+Failed initialization operations are logged and retried without blocking web
+startup; this is real setup work, not a service-health probe. Full asynchronous
 publication tests are documented separately in `docs/aed-integration/test-results.md`.
 
 ## AED Puls integration
@@ -106,10 +111,15 @@ or synchronize them.
 `AED_INTEGRATION_SECRET` belongs only in Replit Secrets. Without it the adapter
 returns 503. Configure a private default App Storage bucket before enabling
 `MCOD_APP_STORAGE_ENABLED=true`. Production startup requires that bucket and
-the shared secret; no silent local-only file storage is allowed.
+the shared secret; no silent local-only file storage is allowed. There is no
+automatic storage write/read preflight during startup.
 
-The prepared production scripts use `mcod.settings.production_replit` and
-Gunicorn rather than Django's development server. They do not run schema
+The production entrypoint selects `mcod.settings.production_replit` and the
+packaged runtime, starts supporting services, then delegates to the same
+application launcher as development. Both profiles import the shared application
+configuration; production retains `DEBUG=False`, secure cookies and its managed
+production database. Neither launcher runs Django's development-server checks.
+They do not run schema
 migrations against production; standard Publish manages a separate production
 schema, not a shared development connection. The owner must choose the approved
 development-data copy in Publishing and click Publish. Do not describe the
@@ -126,13 +136,24 @@ Publishing builds Python, its locked packages, and Elasticsearch with its
 plugins under `runtime/`. This is an intentional release dependency directory:
 Git ignores it, but deployment packaging must include it. `.cache/` and
 `.pythonlibs/` remain development-only and excluded from deployment packaging.
-`scripts/replit/runtime-paths.sh` keeps production and development paths separate;
-production startup fails immediately when the built runtime is missing.
+`scripts/replit/runtime-paths.sh` keeps production and development paths separate.
+Missing binaries fail when executed; there is no build-marker preflight.
 The Python wrapper enforces `PURE_PYTHON=1` to use zope.interface's supported
 Python implementation: its optional C accelerator segfaulted during full Django
 initialization even though isolated module imports passed. Keep the workaround
 for build and runtime together. `PYTHONFAULTHANDLER=1` preserves native-crash
 tracebacks; a passing lightweight import is not a substitute for the full build.
+**Owner requirement:** do not run tests, application health probes or custom
+preflight checks during publishing or startup. Build installs dependencies and
+collects static assets only; startup performs required setup and launches the
+servers, worker and proxy. Keep package-integrity protections. Reserved VM
+publishing uses `ignorePorts=true`; platform security/build validations may still
+run. Verification commands, if needed, are manual and outside those lifecycle
+scripts.
+The shared Python wrapper sets `CELERY_SKIP_CHECKS=1`, and background catalog
+initialization passes Django's `--skip-checks`; neither implicitly runs Django
+system validation at startup. Static collection is build/setup work, not a test.
+
 Only web port 5000 is mapped publicly, to external port 80. Redis, RabbitMQ,
 Erlang distribution, and Elasticsearch must remain internal. The Python wrapper
 uses the standard HTTPS preview origin without `:5000` for development API URLs.

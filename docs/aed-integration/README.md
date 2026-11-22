@@ -27,9 +27,16 @@ Nie używaj `api.dane.gov.pl`: to inna instalacja, nie ten projekt.
    `bash scripts/replit/python.sh manage.py migrate`.
    Migracja adaptera została już zastosowana w bazie dev. Strukturą zarządzanej
    bazy produkcyjnej zajmuje się Publishing; nie uruchamiaj tam tego polecenia.
-4. Workflow **Django admin** uruchamia Django, Falcon, Celery oraz proxy na 5000.
-5. Skrypt odtwarza brakujące indeksy katalogu z istniejących rekordów. Nie usuwa
-   indeksów, użytkowników, zbiorów ani zasobów.
+4. Workflow **Django admin** uruchamia wspólny launcher dev/prod: Daphne ASGI
+   dla Django, Falcon/Gunicorn, Celery oraz proxy na 5000. Wspólna konfiguracja
+   aplikacji jest w `mcod.settings.replit_common`; produkcja zachowuje swoje
+   bezpieczne cookies, `DEBUG=False`, adres API i odrębną bazę.
+5. Brakujące indeksy katalogu są odtwarzane w tle z istniejących rekordów.
+   Nie usuwa to indeksów, użytkowników, zbiorów ani zasobów. Nieudane operacje
+   inicjalizacji są logowane i ponawiane, bez blokowania serwera.
+6. Build i startup nie uruchamiają testów ani własnych healthchecków, prób
+   zapisu do App Storage lub kontroli gotowości usług. `ignorePorts=true`
+   wyłącza kontrolę portów przy publikacji; inne kontrole platformy mogą pozostać.
 
 ## Konfiguracja wymagająca administratora
 

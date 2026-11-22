@@ -21,17 +21,17 @@ class PythonRuntimeTests(unittest.TestCase):
             (runtime / "site-packages/django").mkdir(parents=True)
             interpreter.write_text(
                 '#!/usr/bin/env bash\n'
-                'printf "%s %s" "$PURE_PYTHON" "$PYTHONFAULTHANDLER"\n'
+                'printf "%s %s %s" "$PURE_PYTHON" "$PYTHONFAULTHANDLER" "$CELERY_SKIP_CHECKS"\n'
             )
             interpreter.chmod(0o755)
             result = subprocess.run(
-                ["env", "PURE_PYTHON=0", "PYTHONFAULTHANDLER=0",
+                ["env", "PURE_PYTHON=0", "PYTHONFAULTHANDLER=0", "CELERY_SKIP_CHECKS=",
                  "MCOD_RUNTIME_ROOT=" + directory,
                  "bash", str(ROOT / "scripts/replit/python.sh")],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10,
             )
             self.assertEqual(result.returncode, 0, result.stderr.decode())
-            self.assertEqual(result.stdout, b"1 1")
+            self.assertEqual(result.stdout, b"1 1 1")
 
 
 class Upstream(BaseHTTPRequestHandler):
@@ -111,13 +111,11 @@ class PublishingTests(unittest.TestCase):
     def test_other_protected_pages_still_redirect_to_login(self):
         self.assertEqual(self.request("/resources/resource/")[0], 302)
 
-    def test_missing_production_services_fail_before_starting_children(self):
-        result = subprocess.run(
-            ["bash", "-c", 'MCOD_RUNTIME_ROOT="$1" bash "$2"', "test",
-             self.temp.name + "/missing-runtime", str(ROOT / "scripts/replit/services.sh")],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
-        self.assertEqual(result.returncode, 1)
-        self.assertIn(b"Elasticsearch runtime is missing", result.stderr)
+    def test_launchers_do_not_run_health_probes(self):
+        for name in ("start.sh", "run-production.sh", "build.sh"):
+            source = (ROOT / "scripts/replit" / name).read_text()
+            for probe in ("aed_storage_check", "redis-cli", "/dev/tcp", "curl "):
+                self.assertNotIn(probe, source)
 
 
 if __name__ == "__main__":

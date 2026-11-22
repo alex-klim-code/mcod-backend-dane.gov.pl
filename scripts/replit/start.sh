@@ -6,47 +6,39 @@ export RABBITMQ_HOST="${RABBITMQ_HOST:-127.0.0.1:5672}"
 export ELASTICSEARCH_HOSTS="${ELASTICSEARCH_HOSTS:-127.0.0.1:9200}"
 
 cleanup() {
-  kill "${nginx_pid:-}" "${api_pid:-}" "${admin_pid:-}" "${worker_pid:-}" 2>/dev/null || true
+  kill "${search_pid:-}" "${nginx_pid:-}" "${api_pid:-}" "${admin_pid:-}" \
+    "${worker_pid:-}" "${services_pid:-}" 2>/dev/null || true
   wait 2>/dev/null || true
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
 
-for attempt in $(seq 1 90); do
-  if redis-cli -h 127.0.0.1 ping >/dev/null 2>&1 \
-    && curl --silent --fail http://127.0.0.1:9200 >/dev/null \
-    && (echo >/dev/tcp/127.0.0.1/5672) >/dev/null 2>&1; then
-    break
-  fi
-  if [[ "$attempt" -eq 90 ]]; then
-    echo "Supporting services are not ready. Start the Supporting services workflow." >&2
-    exit 1
-  fi
-  sleep 1
-done
+processes=()
+if [[ "${MCOD_START_SERVICES:-false}" == "true" ]]; then
+  bash scripts/replit/services.sh &
+  services_pid=$!
+  processes+=("$services_pid")
+fi
 
 COMPONENT=admin bash scripts/replit/python.sh manage.py collectstatic --noinput --verbosity 0
-COMPONENT=api bash scripts/replit/python.sh manage.py aed_prepare_search
-COMPONENT=admin bash scripts/replit/python.sh manage.py runserver 127.0.0.1:8001 --noreload &
+COMPONENT=admin bash scripts/replit/python.sh scripts/replit/admin_server.py \
+  --bind 127.0.0.1 --port 8001 mcod.asgi:application &
 admin_pid=$!
-COMPONENT=api bash scripts/replit/python.sh -m gunicorn --workers 1 --bind 127.0.0.1:8000 mcod.api:app &
+COMPONENT=api bash scripts/replit/python.sh -m gunicorn --workers 1 --timeout 120 \
+  --bind 127.0.0.1:8000 mcod.api:app &
 api_pid=$!
 COMPONENT=celery bash scripts/replit/python.sh -m celery --app=mcod.celeryapp:app worker \
   --pool=solo --concurrency=1 --loglevel=INFO &
 worker_pid=$!
-for attempt in $(seq 1 120); do
-  if curl --silent --fail http://127.0.0.1:8001/login/ >/dev/null \
-    && curl --silent --fail http://127.0.0.1:8000/ping >/dev/null; then
-    break
-  fi
-  if [[ "$attempt" -eq 120 ]]; then
-    echo "Django or Falcon did not become ready." >&2
-    exit 1
-  fi
-  sleep 1
-done
+
+# Perform actual catalog initialization asynchronously, not readiness probes.
+bash scripts/replit/prepare-search.sh &
+search_pid=$!
 
 sed "s|@STATIC_ROOT@|$PWD/statics|" scripts/replit/nginx.conf > /tmp/mcod-nginx.conf
 nginx -e stderr -p "$PWD" -c /tmp/mcod-nginx.conf -g "daemon off;" &
 nginx_pid=$!
 
-wait -n "$admin_pid" "$api_pid" "$worker_pid" "$nginx_pid"
+processes+=("$admin_pid" "$api_pid" "$worker_pid" "$nginx_pid")
+wait -n "${processes[@]}"

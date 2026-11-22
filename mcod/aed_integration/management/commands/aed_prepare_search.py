@@ -5,6 +5,11 @@ from django_elasticsearch_dsl.registries import registry
 class Command(BaseCommand):
     help = "Create missing MCOD catalog search indexes without deleting existing indexes."
 
+    def add_arguments(self, parser):
+        # Django 2.2 supports skip_checks in execute(), but does not expose
+        # a general CLI flag. Make it available to the startup initializer.
+        parser.add_argument("--skip-checks", action="store_true")
+
     def handle(self, *args, **options):
         models = {
             model for model in registry.get_models()
