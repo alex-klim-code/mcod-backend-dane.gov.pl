@@ -146,10 +146,12 @@ tracebacks; a passing lightweight import is not a substitute for the full build.
 **Owner requirement:** do not run tests, application health probes or custom
 preflight checks during publishing or startup. Build installs dependencies and
 collects static assets only; startup performs required setup and launches the
-servers, worker and proxy. Keep package-integrity protections. Reserved VM
-publishing uses `ignorePorts=true`; platform security/build validations may still
-run. Verification commands, if needed, are manual and outside those lifecycle
-scripts.
+servers, worker and proxy. Keep package-integrity protections. The owner approved
+platform HTTP-port detection as an exception: Reserved VM publishing must use
+`ignorePorts=false` so public requests reach the application. Setting it true
+can publish a background-only deployment that displays Replit's placeholder
+instead of Django. Platform security/build validations may still run.
+Verification commands, if needed, are manual and outside those lifecycle scripts.
 The shared Python wrapper sets `CELERY_SKIP_CHECKS=1`, and background catalog
 initialization passes Django's `--skip-checks`; neither implicitly runs Django
 system validation at startup. Static collection is build/setup work, not a test.

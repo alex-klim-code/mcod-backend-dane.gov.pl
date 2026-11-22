@@ -35,8 +35,11 @@ Nie używaj `api.dane.gov.pl`: to inna instalacja, nie ten projekt.
    Nie usuwa to indeksów, użytkowników, zbiorów ani zasobów. Nieudane operacje
    inicjalizacji są logowane i ponawiane, bez blokowania serwera.
 6. Build i startup nie uruchamiają testów ani własnych healthchecków, prób
-   zapisu do App Storage lub kontroli gotowości usług. `ignorePorts=true`
-   wyłącza kontrolę portów przy publikacji; inne kontrole platformy mogą pozostać.
+   zapisu do App Storage lub własnych kontroli gotowości usług.
+   Za zgodą właściciela `ignorePorts=false` pozostawia platformowe wykrywanie
+   publicznego portu aplikacji: lokalny 5000 → zewnętrzny 80. Wartość `true`
+   może opublikować usługę bez routingu HTTP, pokazując stronę zastępczą Replit.
+   Pozostałe porty usług wewnętrznych nie mogą mieć publicznych mapowań.
 
 ## Konfiguracja wymagająca administratora
 

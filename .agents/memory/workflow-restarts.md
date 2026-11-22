@@ -27,3 +27,15 @@ the standard public preview URL returned 502.
 `.replit` port mappings and the proxied HTTP response. Correct the mappings using
 the schema-validated configuration flow if they reverted. Verify that web port
 5000 is the only public mapping and do not expose internal broker ports.
+
+Keep platform HTTP-port detection enabled for web deployments, even when custom
+application health probes and startup tests are disabled.
+
+**Why:** Using `ignorePorts=true` published this backend without application-port
+routing: its processes started, but every public path served Replit's deployment
+placeholder. A successful build and HTTP 200 from that placeholder did not mean
+the Django application was reachable.
+
+**How to apply:** Treat a request to remove application-level probes separately
+from the platform's HTTP routing. The owner explicitly approved platform port
+detection for this app; the collaborator-visible policy is in `replit.md`.
