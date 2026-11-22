@@ -1,0 +1,75 @@
+# Import publicznych danych AED
+
+Status: **blocked**
+
+Data UTC: 2026-11-22T01:44:49.591026+00:00
+
+## Wyniki
+```json
+{
+  "imported_institutions": 0,
+  "imported_datasets": 0,
+  "imported_resources": 0,
+  "downloaded_files_this_run": 0,
+  "downloaded_bytes_this_run": 0,
+  "aed_rows_counted": null,
+  "found_institutions": 4,
+  "found_datasets": 4,
+  "found_resources": 9
+}
+```
+
+## Błędy i blokady
+- ImportBlocked: Original MCOD validators prevent import; no records or files were written. Source values were not fabricated and application code was not changed. {'institution:229': {'fax': ['To pole nie może być puste.'], 'abbreviation': ['To pole nie może być puste.']}, 'resource:54632': {'old_resource_type': ['To pole nie może być puste.']}}
+
+## Znalezione źródła
+| ID zbioru | Tytuł | ID instytucji | ID zasobów | Znane bajty kwalifikujących się plików |
+|---|---|---|---|---|
+| 3624 | Defibrylatory zlokalizowane w Mieście Krosno | 229 | 54632 | 2787 |
+| 4581 | Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu | 145 | 62092, 62093, 62094, 62095, 62424 | 235250 |
+| 4955 | Defibrylatory zlokalizowane na terenie Miasta Marki | 537 | 68353, 68355 | 11079 |
+| 39512 | Lokalizacja defibrylatorów (AED) | 7621 | 2512040 | 0 |
+
+Znane bajty pochodzą z metadanych API, nie z pobranych plików.
+Brak rozmiaru nie oznacza pliku o zerowej wielkości.
+
+## Kontrole
+```json
+{
+  "import_api_tests": "not_run_no_import",
+  "code_unchanged": true,
+  "schema_unchanged": true,
+  "before": {
+    "mcod_code_sha256": "640a77a54e14f418163a988f937584ee95b6ac2599f4f51cfb441c4419f6c2c6",
+    "schema_sha256": "ef4e9d72391cfa654ee2f3ee63883b55c2b2478f8b22b1c7404e7914b1388284",
+    "counts": {
+      "institutions": 0,
+      "datasets": 0,
+      "resources": 0,
+      "users": 1
+    }
+  },
+  "after": {
+    "mcod_code_sha256": "640a77a54e14f418163a988f937584ee95b6ac2599f4f51cfb441c4419f6c2c6",
+    "schema_sha256": "ef4e9d72391cfa654ee2f3ee63883b55c2b2478f8b22b1c7404e7914b1388284",
+    "counts": {
+      "institutions": 0,
+      "datasets": 0,
+      "resources": 0,
+      "users": 1
+    }
+  }
+}
+```
+
+## Importowane identyfikatory
+```json
+{}
+```
+
+## Zakres i ograniczenia
+Five requested keyword searches with ID-cursor pagination, then AED/defibrylat matching in public metadata. This does not prove detection of every unlabelled or otherwise unsearchable AED dataset.
+
+Skrypt zatrzymał się na oryginalnych walidatorach. Etap zapisu pozostaje zablokowany.
+Nie wykonano pilota, testu idempotencji ani testu API importowanych zasobów.
+Nie wykonano importu pozostałych zbiorów. Liczby wierszy plików nie są liczbą unikalnych AED.

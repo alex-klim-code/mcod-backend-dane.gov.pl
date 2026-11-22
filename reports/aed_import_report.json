@@ -1,0 +1,113 @@
+{
+  "timestamp": "2026-11-22T01:44:49.591026+00:00",
+  "status": "blocked",
+  "errors": [
+    "ImportBlocked: Original MCOD validators prevent import; no records or files were written. Source values were not fabricated and application code was not changed. {'institution:229': {'fax': ['To pole nie może być puste.'], 'abbreviation': ['To pole nie może być puste.']}, 'resource:54632': {'old_resource_type': ['To pole nie może być puste.']}}"
+  ],
+  "verification": {
+    "import_api_tests": "not_run_no_import",
+    "code_unchanged": true,
+    "schema_unchanged": true,
+    "before": {
+      "mcod_code_sha256": "640a77a54e14f418163a988f937584ee95b6ac2599f4f51cfb441c4419f6c2c6",
+      "schema_sha256": "ef4e9d72391cfa654ee2f3ee63883b55c2b2478f8b22b1c7404e7914b1388284",
+      "counts": {
+        "institutions": 0,
+        "datasets": 0,
+        "resources": 0,
+        "users": 1
+      }
+    },
+    "after": {
+      "mcod_code_sha256": "640a77a54e14f418163a988f937584ee95b6ac2599f4f51cfb441c4419f6c2c6",
+      "schema_sha256": "ef4e9d72391cfa654ee2f3ee63883b55c2b2478f8b22b1c7404e7914b1388284",
+      "counts": {
+        "institutions": 0,
+        "datasets": 0,
+        "resources": 0,
+        "users": 1
+      }
+    }
+  },
+  "imported": {},
+  "counts": {
+    "imported_institutions": 0,
+    "imported_datasets": 0,
+    "imported_resources": 0,
+    "downloaded_files_this_run": 0,
+    "downloaded_bytes_this_run": 0,
+    "aed_rows_counted": null,
+    "found_institutions": 4,
+    "found_datasets": 4,
+    "found_resources": 9
+  },
+  "limits": {
+    "file_bytes": 10485760,
+    "total_bytes": 26214400
+  },
+  "discovery": [
+    {
+      "source_dataset_id": "3624",
+      "title": "Defibrylatory zlokalizowane w Mieście Krosno",
+      "source_institution_id": "229",
+      "resource_ids": [
+        "54632"
+      ],
+      "eligible": true,
+      "known_bytes": 2787,
+      "skipped": []
+    },
+    {
+      "source_dataset_id": "4581",
+      "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+      "source_institution_id": "145",
+      "resource_ids": [
+        "62092",
+        "62093",
+        "62094",
+        "62095",
+        "62424"
+      ],
+      "eligible": true,
+      "known_bytes": 235250,
+      "skipped": []
+    },
+    {
+      "source_dataset_id": "4955",
+      "title": "Defibrylatory zlokalizowane na terenie Miasta Marki",
+      "source_institution_id": "537",
+      "resource_ids": [
+        "68353",
+        "68355"
+      ],
+      "eligible": true,
+      "known_bytes": 11079,
+      "skipped": []
+    },
+    {
+      "source_dataset_id": "39512",
+      "title": "Lokalizacja defibrylatorów (AED)",
+      "source_institution_id": "7621",
+      "resource_ids": [
+        "2512040"
+      ],
+      "eligible": false,
+      "known_bytes": 0,
+      "skipped": [
+        {
+          "source_resource_id": "2512040",
+          "reason": "Unknown file size; no download authorized"
+        }
+      ]
+    }
+  ],
+  "selected_dataset": "3624",
+  "selected_source_ids": {
+    "institution": "229",
+    "dataset": "3624",
+    "resources": [
+      "54632"
+    ]
+  },
+  "discovery_scope": "Five requested keyword searches with ID-cursor pagination, then AED/defibrylat matching in public metadata. This does not prove detection of every unlabelled or otherwise unsearchable AED dataset."
+}
