@@ -143,6 +143,16 @@ Python implementation: its optional C accelerator segfaulted during full Django
 initialization even though isolated module imports passed. Keep the workaround
 for build and runtime together. `PYTHONFAULTHANDLER=1` preserves native-crash
 tracebacks; a passing lightweight import is not a substitute for the full build.
+**Owner requirement for deployment diagnosis:** first establish a cause from
+actual production-revision logs or configuration, then make only the minimal
+supported correction. Do not guess or change MCOD logic or disable services
+without justification. Compare launch commands, environment/secret presence
+(never values), Nginx, backend port 8001, `.replit`, packaged files, RAM limits
+and process order. A successful production-settings test inside development is
+not verification of the deployed VM. If production process/filesystem access is
+unavailable, state the limitation and provide commands for the actual production
+environment rather than claiming those checks were performed there.
+
 **Owner requirement:** dev and prod must use the same application features,
 services, UI and shared launchers. Do not create a separate reduced production
 backend. Environment-specific secrets, domains, secure cookies and the previously

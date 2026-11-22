@@ -28,3 +28,17 @@ mtime_ms = 1795313894792
 storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:faecd1b7-2189-478f-956a-a2d69e227fb5/cdb35796-1300-4ff0-87eb-bd53aaa99dce/66e0f399-31ce-43a8-a973-ab12f223a6b5"
 storage_version_token = "1795313954264900"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "dlmL7g2pJdKFSVigA-uqZ"
+uri = "file://docs/aed-integration/production-diagnosis.md"
+type = "text"
+title = "Porównanie Development i Production MCOD"
+description = "Potwierdzone logi, porównanie konfiguracji i RAM oraz samodzielne polecenia diagnostyczne do wykonania w rzeczywistym Production, bez wypisywania sekretów."
+logical_id = "78ec581c-4299-4b2f-bc94-7ada7875456b"
+content_hash = "sha256:8f6be4c175aeb8072d0a906001064ab4c7aa1117dbd62a5fae9f99f0fd917854"
+size = 8979
+mtime_ms = 1795321633355
+storage_uri = "gcs://replit-rams-assets-spock/rams/assets/repl:faecd1b7-2189-478f-956a-a2d69e227fb5/78ec581c-4299-4b2f-bc94-7ada7875456b/6cace08d-2366-4c27-888d-1e10364d34ff"
+storage_version_token = "1795321639938933"
+content_type = "text/markdown"
