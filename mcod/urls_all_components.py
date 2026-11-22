@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from django.http import JsonResponse
 from django.urls import path, re_path
 
+from mcod.aed_integration.health import readiness_view
 from mcod.reports.views import DownloadReportFileView
 from mcod.resources.views import DownloadResourceFileView
 from mcod.users.views import DownloadMeetingFileView
@@ -27,6 +28,7 @@ common_urlpatterns = [
         name="secure_report_download",
     ),
     path("health/", health_view),
+    path("health/ready/", readiness_view, name="aed-readiness"),
     path("logingovpl/", include("mcod.users.urls")),
 ]
 

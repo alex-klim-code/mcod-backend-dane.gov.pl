@@ -143,7 +143,14 @@ Python implementation: its optional C accelerator segfaulted during full Django
 initialization even though isolated module imports passed. Keep the workaround
 for build and runtime together. `PYTHONFAULTHANDLER=1` preserves native-crash
 tracebacks; a passing lightweight import is not a substitute for the full build.
-**Owner requirement:** do not run tests, application health probes or custom
+**Owner requirement:** dev and prod must use the same application features,
+services, UI and shared launchers. Do not create a separate reduced production
+backend. Environment-specific secrets, domains, secure cookies and the previously
+approved independent production database remain separate.
+Host validation is shared too: preview, published Replit hosts and loopback
+hosts are allowed in both environments. Internal HTTP requests must not fail
+solely because production forgot a loopback host supported in development.
+Do not run tests, application health probes or custom
 preflight checks during publishing or startup. Build installs dependencies and
 collects static assets only; startup performs required setup and launches the
 servers, worker and proxy. Keep package-integrity protections. The owner approved
@@ -152,6 +159,22 @@ platform HTTP-port detection as an exception: Reserved VM publishing must use
 can publish a background-only deployment that displays Replit's placeholder
 instead of Django. Platform security/build validations may still run.
 Verification commands, if needed, are manual and outside those lifecycle scripts.
+The owner subsequently requested real integration verification and a proper
+health endpoint. Run those checks manually, in isolated test infrastructure,
+not as publishing/startup gates. `/health/` is process liveness;
+`/health/ready/` checks PostgreSQL, Redis sessions, the three required catalog
+indexes and the task broker, returning 503 if any is unavailable. It does not
+claim a particular uploaded file is validated or that a worker finished it.
+`MCOD_MINIMAL_MODE=true` (the default in the shared settings) disables RDF,
+Discourse, Unleash and the periodic health-monitor thread in BOTH environments.
+Setting it false restores their base configuration, but requires provisioning
+their real services separately. Keep Elasticsearch, Redis, RabbitMQ and the
+single Celery worker for the current unmodified MCOD publication pipeline.
+Both launchers reuse the static assets prepared by the build instead of
+reinitializing Django merely to collect them again on every restart. The shared
+launcher collects them only if the required admin asset is absent, so a fresh
+development checkout remains usable. After editing source static assets in
+development, refresh them explicitly with `manage.py collectstatic`.
 The shared Python wrapper sets `CELERY_SKIP_CHECKS=1`, and background catalog
 initialization passes Django's `--skip-checks`; neither implicitly runs Django
 system validation at startup. Static collection is build/setup work, not a test.

@@ -41,6 +41,53 @@ Nie używaj `api.dane.gov.pl`: to inna instalacja, nie ten projekt.
    może opublikować usługę bez routingu HTTP, pokazując stronę zastępczą Replit.
    Pozostałe porty usług wewnętrznych nie mogą mieć publicznych mapowań.
 
+### Wspólny minimalny wariant Development i Production
+
+Oba środowiska korzystają z tych samych funkcji i launcherów. Nie ma osobnej
+okrojonej implementacji produkcyjnej. Odrębne są wyłącznie ustawienia środowiska:
+sekrety, adresy, zabezpieczenia cookies i zatwierdzona osobna baza produkcyjna.
+Wspólny launcher wykorzystuje gotowe pliki statyczne zamiast ponownie
+inicjalizować całe Django do ich zbierania przy każdym starcie. Zbiera je
+automatycznie tylko wtedy, gdy brakuje podstawowego pliku panelu. Build nadal
+wykonuje pełne `collectstatic`; po zmianie źródłowego CSS/JS w development
+należy jawnie odświeżyć pliki poleceniem `manage.py collectstatic`.
+
+Wspólne `MCOD_MINIMAL_MODE=true` wyłącza RDF, forum Discourse, Unleash i cykliczny
+wątek monitorowania innych usług. Nie uruchamiamy CMS, Celery Beat ani osobnych
+procesów raportów, harvesterów czy newslettera. Istniejący kod pozostaje dostępny.
+`MCOD_MINIMAL_MODE=false` przywraca konfigurację bazową tych integracji; wymaga
+jednak wcześniejszego przygotowania ich rzeczywistych usług zewnętrznych.
+
+Zachowane usługi są niezbędne dla nieprzebudowanego mechanizmu MCOD:
+
+| Usługa | Powód pozostawienia |
+| --- | --- |
+| PostgreSQL | Instytucje, użytkownicy, uprawnienia, zbiory, zasoby i wyniki walidacji |
+| Elasticsearch | Standardowe listy i wyszukiwanie `/api/institutions`, `/api/datasets`, `/api/resources`; indeksowanie plików |
+| Redis | Sesje logowania, cache konfiguracji i limity żądań |
+| RabbitMQ + jeden Celery worker | Rzeczywista asynchroniczna walidacja plików i indeksowanie wymagane przed publikacją |
+| App Storage | Oryginalne pliki AED; pobieranie jest chronione statusem publikacji MCOD |
+| Nginx + Daphne + Falcon/Gunicorn | Wspólny port 5000, ten sam panel administracyjny i właściwe API MCOD |
+
+RabbitMQ nie jest jedynym możliwym brokerem Celery, ale jest brokerem używanym
+przez ten projekt. Zastąpienie go Redis wymaga osobnej, sprawdzonej zmiany
+transportu i bezpiecznej obsługi oczekujących zadań; samo wyłączenie RabbitMQ
+przerwałoby aktualny proces walidacji. Nie stosujemy trybu eager, atrap API ani
+pomijania walidacji, aby pozornie uzyskać publikację.
+
+- `GET /health/` — istniejący endpoint żywotności procesu Django.
+- `GET /health/ready/` — gotowość PostgreSQL, Redis sesji, trzech indeksów katalogu
+  i połączenia z brokerem; kod 200 tylko przy powodzeniu wszystkich kontroli,
+  w przeciwnym razie 503. Nie potwierdza zakończenia walidacji konkretnego pliku
+  ani pracy konkretnego workera; służą do tego istniejące endpointy zasobu.
+- `/` nadal otwiera rzeczywisty panel/logowanie, nie zastępczy komunikat „OK”.
+
+Publiczne `POST /api/institutions` nie jest obsługiwane przez aktualny MCOD.
+Instytucje tworzy uprawniony administrator w panelu
+`/organizations/organization/add/`; adapter nie otrzymuje nowego uprawnienia
+ani nowego endpointu tworzenia instytucji. Użytkownicy i role AED Puls nadal
+pozostają po stronie AED Puls.
+
 ## Konfiguracja wymagająca administratora
 
 1. W Tools → App Storage utwórz prywatny zasobnik dla tego projektu. SDK używa

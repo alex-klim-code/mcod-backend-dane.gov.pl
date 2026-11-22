@@ -29,6 +29,14 @@ DATABASES = {
 }
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+ALLOWED_HOSTS = [
+    "localhost", "127.0.0.1", "[::1]", ".replit.dev", ".replit.app",
+] + [
+    host.strip() for host in os.environ.get("MCOD_ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+]
+if os.environ.get("REPLIT_DEV_DOMAIN"):
+    ALLOWED_HOSTS.append(os.environ["REPLIT_DEV_DOMAIN"])
 SESSION_COOKIE_DOMAIN = None
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_NAME = "mcod_replit_session"
@@ -43,10 +51,12 @@ REPLIT_APP_STORAGE_ENABLED = (
 
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 EMAIL_FILE_PATH = str(ROOT_DIR.path("generated-artifacts", "mail"))  # noqa: F405
-USE_RDF_DB = False
-HEALTH_CHECK = False
-DISCOURSE_FORUM_ENABLED = False
-UNLEASH_ENABLED = False
+MCOD_MINIMAL_MODE = env.bool("MCOD_MINIMAL_MODE", default=True)  # noqa: F405
+if MCOD_MINIMAL_MODE:
+    USE_RDF_DB = False
+    HEALTH_CHECK = False
+    DISCOURSE_FORUM_ENABLED = False
+    UNLEASH_ENABLED = False
 ELASTICSEARCH_DSL_INDEX_SETTINGS = {"number_of_shards": 1, "number_of_replicas": 0}
 ELASTICSEARCH_HISTORIES_IDX_SETTINGS = {"number_of_shards": 1, "number_of_replicas": 0}
 FIXTURE_DIRS = [str(DATA_DIR.path("initial_data"))]  # noqa: F405
@@ -54,3 +64,14 @@ for logger in LOGGING["loggers"].values():  # noqa: F405
     logger["handlers"] = ["console"]
 LOGGING["handlers"] = {"console": LOGGING["handlers"]["console"]}  # noqa: F405
 LOGGING["root"] = {"handlers": ["console"], "level": "WARNING"}
+# Signal debug logging includes expected get_or_create() tracebacks and floods
+# both environments; genuine signal failures and application errors stay logged.
+LOGGING["loggers"]["signals"]["level"] = "WARNING"
+# The legacy profile disables existing Django loggers. Explicitly retain
+# request/security failures in BOTH environments, including full 500 tracebacks.
+for _logger in ("django.request", "django.security", "daphne.server"):
+    LOGGING["loggers"][_logger] = {
+        "handlers": ["console"],
+        "level": "WARNING",
+        "propagate": False,
+    }

@@ -8,10 +8,6 @@ from mcod.settings.replit_common import *  # noqa: E402,F403
 
 DEBUG = True
 ENVIRONMENT = "local"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".replit.dev"]
-if os.environ.get("REPLIT_DEV_DOMAIN"):
-    ALLOWED_HOSTS.append(os.environ["REPLIT_DEV_DOMAIN"])
-
 SESSION_COOKIE_SAMESITE = None
 CSRF_COOKIE_SAMESITE = None
 # The Replit proxy keeps the browser's :5000 port in the HTTPS Referer, while

@@ -20,7 +20,9 @@ from mcod.celeryapp import app as celery_app
 from mcod.core.storages import ResourcesStorage
 from mcod.datasets.models import Dataset
 from mcod.organizations.factories import OrganizationFactory
+from mcod.organizations.models import Organization
 from mcod.resources.models import Resource, ResourceFile
+from mcod.users.factories import EditorFactory
 
 
 pytestmark = [
@@ -42,7 +44,11 @@ def wait_for(check, description, seconds=120):
 
 def test_real_aed_publication_and_aggregate(monkeypatch, admin_client):
     assert settings.REPLIT_APP_STORAGE_ENABLED
-    assert celery_app.conf.broker_url == "memory://"
+    broker_url = celery_app.conf.broker_url
+    if os.environ.get("AED_E2E_BROKER_URL"):
+        assert urlsplit(broker_url).path.startswith("/aed-e2e-")
+    else:
+        assert broker_url == "memory://"
     assert all(name.startswith("aed-e2e-") for name in settings.ELASTICSEARCH_INDEX_NAMES.values())
     uploaded_names = set()
     original_save = ResourcesStorage._save
@@ -108,6 +114,27 @@ def test_real_aed_publication_and_aggregate(monkeypatch, admin_client):
                     title="Isolated E2E B", institution_type="state", status="published", image=""
                 ),
             )
+            # Real MCOD records, identity and API authorization in the isolated
+            # PostgreSQL database. No new institution-write API is invented.
+            assert mapping_a.organization.pk
+            assert client.simulate_post(
+                "/institutions", json={"title": "Not a supported write API"}
+            ).status_code == 405
+            institutions = request_ok("get", "/integrations/aed/v1/institutions")
+            assert len(institutions["data"]) == 2
+            password = "Isolated-only-password-82!"
+            institution_user = EditorFactory.create(
+                email="isolated-aed-editor@example.org",
+                password=password, organizations=[mapping_a.organization],
+            )
+            login = client.simulate_post("/auth/login", json={
+                "data": {"type": "user", "attributes": {
+                    "email": institution_user.email, "password": password,
+                }},
+            })
+            assert login.status_code in (200, 201), login.status_code
+            assert int(login.json["data"]["id"]) == institution_user.pk
+            assert institution_user.organizations.filter(pk=mapping_a.organization_id).exists()
             AEDAggregateState.objects.create(owner_mapping=mapping_a, license_chosen=Dataset.LICENSE_CC0)
             source_rows = {}
             resources = {}
@@ -239,3 +266,40 @@ def test_real_aed_publication_and_aggregate(monkeypatch, admin_client):
         connections.get_connection().indices.delete(
             index=settings.ELASTICSEARCH_INDEX_PREFIX + "*", ignore=[404]
         )
+
+
+def test_real_institution_creation_uses_authorized_mcod_admin(admin_client):
+    path = "/organizations/organization/add/"
+    page = admin_client.get(path, secure=True)
+    assert page.status_code == 200
+    data = {
+        "title": "Isolated HTTP institution",
+        "institution_type": "state",
+        "status": "published",
+        "postal_code": "00-001",
+        "city": "Warszawa",
+        "street_type": "ul.",
+        "street": "Testowa",
+        "street_number": "1",
+        "email": "isolated-institution@example.org",
+        "tel": "221234567",
+        "regon": "123456785",
+        "_save": "Save",
+    }
+    for inline in page.context["inline_admin_formsets"]:
+        prefix = inline.formset.prefix
+        data.update({
+            prefix + "-TOTAL_FORMS": "0",
+            prefix + "-INITIAL_FORMS": "0",
+            prefix + "-MIN_NUM_FORMS": "0",
+            prefix + "-MAX_NUM_FORMS": "1000",
+        })
+    created = admin_client.post(path, data, secure=True)
+    errors = (
+        created.context["adminform"].form.errors
+        if created.status_code == 200 else {}
+    )
+    assert created.status_code == 302, errors
+    institution = Organization.objects.get(title=data["title"])
+    assert institution.status == "published"
+    assert institution.created_by_id is not None

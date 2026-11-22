@@ -21,7 +21,12 @@ if [[ "${MCOD_START_SERVICES:-false}" == "true" ]]; then
   processes+=("$services_pid")
 fi
 
-COMPONENT=admin bash scripts/replit/python.sh manage.py collectstatic --noinput --verbosity 0
+# Publishing already packages static assets. Avoid a redundant full Django
+# initialization before starting the real servers in either environment.
+# A fresh development checkout still gets the required assets automatically.
+if [[ ! -f "$PWD/statics/admin/css/base.css" ]]; then
+  COMPONENT=admin bash scripts/replit/python.sh manage.py collectstatic --noinput --verbosity 0
+fi
 COMPONENT=admin bash scripts/replit/python.sh scripts/replit/admin_server.py \
   --bind 127.0.0.1 --port 8001 mcod.asgi:application &
 admin_pid=$!
