@@ -1,5 +1,6 @@
 /.cache/
 /.pythonlibs/
 /generated-artifacts/
+/erl_crash.dump
 # runtime/ is intentionally included: build.sh puts required release binaries
 # there. Do not move those dependencies back into the excluded caches above.

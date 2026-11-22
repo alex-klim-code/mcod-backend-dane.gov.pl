@@ -125,6 +125,15 @@ schema, not a shared development connection. The owner must choose the approved
 development-data copy in Publishing and click Publish. Do not describe the
 production copy or hosted startup as completed before verification.
 
+The owner requested explicit Daphne startup diagnostics for the missing admin
+listener on 8001. `run-admin.sh` preserves stdout/stderr, the actual Python PID,
+exit status and signal forwarding. The Python bootstrap logs import stages and
+uses a native traceback timer while starting; only Daphne's successful socket
+callback confirms listening and cancels that timer. These diagnostics do not
+gate startup, replace HTTP responses or declare the deployment healthy.
+See `docs/aed-integration/production-diagnosis.md`. Do not mistake local
+production-profile results for execution in the deployed image.
+
 Development and production databases, sessions, queues and search indexes are
 independent. Tests must use a separate test database, broker, search namespaces
 and isolated files, never the production database. Keep encryption/signing

@@ -2,7 +2,97 @@
 
 Stan rozpoznania: 2026-11-22. To raport diagnostyczny, nie potwierdzenie naprawy.
 
-## Dowody z rzeczywistej publikacji
+## Aktualizacja: diagnostyka rzeczywistego startu admina
+
+Użytkownik potwierdził zmianę Production na 8 GiB / 1 vCPU. Nie zmieniono
+zasobów ani portów. Poniższy starszy odczyt 2 GiB dotyczy poprzedniej publikacji,
+nie obecnego przydziału maszyny.
+
+Nowsze dostępne logi bez identyfikatora rewizji pokazują:
+
+- 04:45:18.618 UTC: `starting up user application`;
+- 04:45:29.186 UTC: Gunicorn nasłuchuje na 8000;
+- 04:45:24.097–04:46:59.215 UTC: 79 odmów połączenia Nginx do 8001.
+
+Nie ma wpisów potwierdzających wywołanie admina, jego zakończenie lub traceback.
+Bieżący wykaz buildów zwrócił pustą listę; historyczna rewizja poniżej nie była
+już dostępna. Tych logów nie można uczciwie przypisać do konkretnego SHA obrazu.
+Nadal nie ma dostępu do konsoli/procesów/plików VM. Nie ustalono przyczyny
+nieobecności admina na Production.
+
+### Co zapisuje teraz launcher
+
+Kod źródłowy nie zawiera warunku wyłączającego Daphne na produkcji:
+`run-production.sh` → `start.sh` → `run-admin.sh` →
+`python.sh -u scripts/replit/admin_server.py --bind 127.0.0.1 --port 8001 mcod.asgi:application`.
+Wywołanie admina następuje po ewentualnym `collectstatic`.
+
+Po opublikowaniu tych zmian deployment powinien wypisać:
+
+1. `[mcod-launcher] event=start` oraz początek/koniec `collectstatic`, jeżeli wymagane;
+2. `admin_supervisor_spawn` i PID nadzorcy;
+3. `[mcod-admin-launcher] event=runtime_file ... exists=true/false` dla interpretera,
+   katalogu Daphne, `daphne/cli.py` i `admin_server.py` w wybranym runtime;
+4. `before_spawn` z adresem i portem, a potem `process_spawned` z PID procesu;
+5. `[mcod-admin] event=entrypoint_enter` — pierwszy dowód wykonania pliku Pythona;
+6. JSON z `daphne_cli_import_begin/complete` i ścieżką rzeczywiście zaimportowanego Daphne;
+7. `production_settings_import_begin/complete`, `django_setup_begin/complete`
+   i `asgi_routing_import_begin/complete`;
+8. JSON `stage=listening, host=127.0.0.1, port=8001` dopiero z rzeczywistego
+   callbacku otwarcia socketu Twisted/Daphne, nie na podstawie istnienia PID;
+9. po zakończeniu procesu: `process_exit`, PID i rzeczywisty `exit_code`,
+   a dla statusu sygnałowego także numer sygnału.
+
+Import ustawień może wystąpić przed wejściem do `mcod.asgi`: pakiet `mcod`
+inicjalizuje także Celery. Kolejność komunikatów odzwierciedla prawdziwe importy.
+
+Przedłużony start wypisuje stosy Pythona co 45 sekund. To diagnostyka, nie limit
+czasu startu: nie zabija procesu i nie zwraca HTTP 200. Stos pozwala odróżnić
+import modułu, ładowanie ustawień i oczekiwanie w połączeniu z bazą. Timer jest
+anulowany po otwarciu socketu lub zakończeniu inicjalizacji. Wyjątki mają traceback
+i ostatni etap (`last_stage`), bez zrzutu środowiska, lokalnych zmiennych lub DSN.
+Oba strumienie procesu trafiają bezpośrednio do stderr deploymentu; nie ma
+przekierowania do niewidocznego pliku ani potoku zmieniającego kod wyjścia.
+
+Daphne 2.5 potrafi zakończyć `run()` bez wyjątku po błędzie bindowania. Wrapper
+zachowuje traceback tego błędu i zwraca wtedy niezerowy status zamiast fałszywego
+sukcesu. Nie zmienia to wybranego adresu ani portu.
+
+### Wyniki lokalne a Production
+
+Siedem izolowanych testów sprawdziło oba strumienie, PID, statusy 0/23/143,
+nieudany import oraz rzeczywisty zrzut stosu zablokowanego importu.
+Osobny lokalny start z pakowanym runtime i profilem `production_replit` przeszedł
+import Daphne, ustawień, `django.setup()` i routingu. Celowo użyto zajętego portu
+8001: `CannotListenError` miał pełny traceback i status 1. To kontrolowany test
+raportowania błędu, NIE wyjątek znaleziony na Production ani test produkcyjnej bazy.
+Nie uruchomiono publikacji; do dowodu wykonania na VM potrzebne są nowe logi po
+wdrożeniu tych plików.
+
+### Końcowa weryfikacja dostępności
+
+- Wszystkie 12 testów diagnostyki i istniejącej konfiguracji publikowania przeszło.
+- Development: callback Daphne potwierdził PID 39464, `127.0.0.1:8001`,
+  05:01:06.797 UTC. `/` i `/login/` przez publiczny proxy Development zwracają
+  HTTP 200 z rzeczywistym formularzem logowania MCOD. Bezpośrednie `/login/` na
+  8001 również sprawdzono podczas tej sesji.
+- Metadane publikacji zmieniły status na sukces: build
+  `0557b566-a958-4c7e-9f46-4d896961e9cd`, zakończenie około 04:57:56 UTC.
+- Po tej zmianie niezależne żądania HTTPS spoza powłoki workspace do
+  `https://mcod-backend-danegovpl.replit.app/` i `/login/` zwróciły HTTP 200
+  z formularzem zawierającym token CSRF i pole hasła. To sprawdzenie rzeczywistej
+  strony aplikacji, nie jedynie odpowiedzi Gunicorna ani statycznego healthchecka.
+- Nie potwierdzono uruchomienia nowych znaczników diagnostycznych w tym obrazie VM.
+  Publiczna dostępność wróciła podczas pracy, bez zainicjowania publikacji przez
+  agenta. Nie należy przypisywać tego powrotu nowemu kodowi ani uznawać poprzedniej
+  przyczyny 502 za wyjaśnioną.
+
+Podczas kontroli Development wykryto też drugie kopie workflow konkurujące
+o zajęte porty. Zatrzymano wyłącznie rozpoznane stare grupy procesów Development
+i przywrócono te same usługi oraz aplikację pod tymi samymi portami. Nie zmieniono
+konfiguracji ani stanu usług Production. Oba workflow Development ponownie działają.
+
+## Historyczne dowody z poprzedniej publikacji
 
 Nieudana rewizja: `3c2f1a6a-6692-4032-a192-0c5ef14a4cb4`.
 Utworzona 03:53:52 UTC, zakończona niepowodzeniem 04:04:10 UTC.
@@ -20,7 +110,7 @@ Nie ma dowodu pozwalającego wskazać OOM, brak Daphne lub wadę MCOD.
 Port 1104 występuje w kontekście przekierowania platformy/Host; nie jest
 dowodem, że źródłowa konfiguracja Nginx nasłuchuje na 1104.
 
-## Porównanie i granice dostępu
+## Historyczne porównanie i granice dostępu
 
 | Obszar | Development — potwierdzone w workspace | Production |
 | --- | --- | --- |
@@ -153,10 +243,11 @@ Do wskazania minimalnej poprawki potrzeba jednego z poniższych:
 - zdarzenia nadzorcy zawierającego PID i kod wyjścia/sygnał admina.
 
 Nie należy zmieniać 8001 na 1104 ani wyłączać usług na podstawie samego 502.
-Nie wprowadzono poprawki aplikacji, nie zmieniono jej konfiguracji i nie
-uruchomiono publikacji w ramach tego rozpoznania.
+Nie zmieniono logiki MCOD, konfiguracji Nginx ani przydziału zasobów. Dodano
+diagnostykę startu i niezerowy status przy błędzie bindowania. Nie uruchomiono
+publikacji w ramach tego rozpoznania.
 
-Gdy konsola Production jest niedostępna, możliwy następny krok to zatwierdzony,
-jednorazowy start diagnostyczny publikacji, rejestrujący PID admina, etapy importu,
-stos przy przedłużonym starcie i kod wyjścia — bez wypisywania sekretów,
-zmiany portów, wyłączania usług lub zastępowania odpowiedzi healthcheck.
+Gdy konsola Production jest niedostępna, logi z nowego bootstrapu podczas
+następnego wdrożenia pozwolą zebrać PID admina, etapy importu, stos przy
+przedłużonym starcie i kod wyjścia — bez wypisywania sekretów, zmiany portów,
+wyłączania usług lub zastępowania odpowiedzi healthcheck.

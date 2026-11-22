@@ -274,6 +274,7 @@ mcod/api_key.txt
 # Replit development runtime and generated setup output
 /.pythonlibs/
 /generated-artifacts/
+/erl_crash.dump
 /statics/
 
 # Rebuilt production dependencies; release content, never source-controlled.
