@@ -128,6 +128,11 @@ Git ignores it, but deployment packaging must include it. `.cache/` and
 `.pythonlibs/` remain development-only and excluded from deployment packaging.
 `scripts/replit/runtime-paths.sh` keeps production and development paths separate;
 production startup fails immediately when the built runtime is missing.
+The Python wrapper enforces `PURE_PYTHON=1` to use zope.interface's supported
+Python implementation: its optional C accelerator segfaulted during full Django
+initialization even though isolated module imports passed. Keep the workaround
+for build and runtime together. `PYTHONFAULTHANDLER=1` preserves native-crash
+tracebacks; a passing lightweight import is not a substitute for the full build.
 Only web port 5000 is mapped publicly, to external port 80. Redis, RabbitMQ,
 Erlang distribution, and Elasticsearch must remain internal. The Python wrapper
 uses the standard HTTPS preview origin without `:5000` for development API URLs.

@@ -2,6 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 source scripts/replit/runtime-paths.sh
+# The legacy zope.interface C accelerator can segfault during Django's nested
+# Sentry/gevent imports. Use its supported Python implementation in every
+# component, including collectstatic, and retain native tracebacks on crashes.
+export PURE_PYTHON=1
+export PYTHONFAULTHANDLER=1
 if [[ ! -x "$MCOD_PYTHON" || ! -d "$MCOD_PACKAGES_ROOT/django" ]]; then
   echo "MCOD Python runtime is missing. Run the configured build command before starting production." >&2
   exit 1

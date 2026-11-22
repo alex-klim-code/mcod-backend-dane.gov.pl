@@ -12,6 +12,28 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 
+class PythonRuntimeTests(unittest.TestCase):
+    def test_wrapper_enforces_native_extension_compatibility(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory)
+            interpreter = runtime / "python/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8"
+            interpreter.parent.mkdir(parents=True)
+            (runtime / "site-packages/django").mkdir(parents=True)
+            interpreter.write_text(
+                '#!/usr/bin/env bash\n'
+                'printf "%s %s" "$PURE_PYTHON" "$PYTHONFAULTHANDLER"\n'
+            )
+            interpreter.chmod(0o755)
+            result = subprocess.run(
+                ["env", "PURE_PYTHON=0", "PYTHONFAULTHANDLER=0",
+                 "MCOD_RUNTIME_ROOT=" + directory,
+                 "bash", str(ROOT / "scripts/replit/python.sh")],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            self.assertEqual(result.stdout, b"1 1")
+
+
 class Upstream(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/" and self.headers.get("Cookie") != "test-authenticated":
