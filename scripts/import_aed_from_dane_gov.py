@@ -187,21 +187,43 @@ def report_markdown(report):
         lines.append("| {} | {} | {} | {} | {} |".format(
             item["source_dataset_id"], item["title"].replace("|", "/"),
             item["source_institution_id"], ", ".join(item["resource_ids"]), item["known_bytes"]))
-    lines += ["", "Znane bajty pochodzą z metadanych API, nie z pobranych plików.",
+    if report.get("files"):
+        lines += ["", "## Sprawdzone oryginalne pliki",
+                  "| Zasób źródłowy → lokalny | Zbiór źródłowy → lokalny | Format | Stan | Bajty | Wiersze |",
+                  "|---|---|---|---|---:|---:|"]
+        for item in report["files"]:
+            lines.append("| {} → {} | {} → {} | {} | {} | {} | {} |".format(
+                item["source_resource_id"], item["local_resource_id"], item["source_dataset_id"],
+                item["local_dataset_id"], item["format"], item["status"], item["bytes"],
+                item["records"] if item["records"] is not None else "nieznane"))
+        lines += ["", "**Suma wierszy różnych formatów nie jest liczbą unikalnych AED.**",
+                  "Dla każdego opublikowanego pliku potwierdzono sumę SHA-256 przez oryginalne API. "
+                  "Sprawdzono też, że plik szkicu nie jest publicznie dostępny.",
+                  "", "## Oryginalne błędy walidacji CSV", "```json",
+                  json.dumps(report.get("original_data_validation_errors", []), ensure_ascii=False, indent=2),
+                  "```", "", "## Zbiory i licencje", "```json",
+                  json.dumps(report.get("datasets", []), ensure_ascii=False, indent=2), "```",
+                  "", "## Niewykonane etapy", "```json",
+                  json.dumps(report.get("remaining_sources", []), ensure_ascii=False, indent=2), "```",
+                  "", "## Daty i panel", report.get("source_timestamp_policy", ""),
+                  "Listy oryginalnego panelu wyrenderowano testem z uprawnieniami istniejącego pracownika, "
+                  "bez utworzenia sesji. Nie weryfikowano zalogowanego panelu w przeglądarce."]
+    lines += ["", "Kolumna znanych bajtów w tabeli znalezionych źródeł pochodzi z metadanych API. "
+              "Tabela sprawdzonych plików podaje rozmiary zmierzone podczas kontroli App Storage.",
               "Brak rozmiaru nie oznacza pliku o zerowej wielkości.",
               "", "## Kontrole", "```json",
               json.dumps(report.get("verification", {}), ensure_ascii=False, indent=2), "```",
               "", "## Importowane identyfikatory", "```json",
               json.dumps(report.get("imported", {}), ensure_ascii=False, indent=2), "```",
               "", "## Zakres i ograniczenia", report.get("discovery_scope", ""),
-              "", "Skrypt zatrzymał się na oryginalnych walidatorach. Etap zapisu pozostaje zablokowany.",
-              "Wszystkie trzy pola mają null=True, ale blank=False: NULL jest dozwolone w bazie, "
-              "lecz odrzucane przez model.full_clean().",
-              "Oryginalny formularz instytucji dopuszcza pusty faks i skrót. Django realizuje to "
-              "przez full_clean(exclude=...). Formularz zasobu wyklucza historyczne old_resource_type.",
-              "Nie zastosowano tych wyłączeń w importerze bez wyjaśnienia wymogu pełnej walidacji.",
-              "Nie wykonano pilota, testu idempotencji ani testu API importowanych zasobów.",
-              "Nie wykonano importu pozostałych zbiorów. Liczby wierszy plików nie są liczbą unikalnych AED."]
+              "", "Walidacja odpowiada istniejącym formularzom MCOD: pusty opcjonalny faks i skrót "
+              "oraz historyczne old_resource_type są wyłączane tak jak w panelu administratora. "
+              "Pozostałe pola, model.clean(), unikalność i relacje przechodzą full_clean(). "
+              "Nie wpisano fikcyjnego faksu, skrótu ani typu historycznego.",
+              "Pliki zachowują oryginalne bajty. Liczby wierszy nie oznaczają unikalnych AED: "
+              "różne formaty i wersje mogą opisywać te same urządzenia.",
+              "Nie są importowane konta, hasła, sesje ani uprawnienia. "
+              "Nie są zmieniane modele, schemat ani oryginalny kod MCOD."]
     return "\n".join(lines) + "\n"
 
 
@@ -212,6 +234,8 @@ def main():
     modes.add_argument("--import", dest="do_import", action="store_true")
     modes.add_argument("--report", action="store_true")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--verify", action="store_true",
+                        help="With --report, verify existing records/files/API/admin without importing.")
     parser.add_argument("--limit-datasets", type=int, default=1)
     parser.add_argument("--dataset-id")
     parser.add_argument("--refresh-known", action="store_true",
@@ -219,7 +243,9 @@ def main():
     parser.add_argument("--max-file-bytes", type=int, default=10 * 1024 * 1024)
     parser.add_argument("--max-total-bytes", type=int, default=25 * 1024 * 1024)
     args = parser.parse_args()
-    if args.report:
+    if args.verify and not args.report:
+        parser.error("--verify requires --report.")
+    if args.report and not args.verify:
         report = json.loads(REPORT.read_text())
         REPORT.with_suffix(".md").write_text(report_markdown(report), encoding="utf-8")
         print(json.dumps({"status": report["status"], "counts": report.get("counts"),
@@ -227,9 +253,31 @@ def main():
         return
     if args.limit_datasets != 1:
         parser.error("Only the approved one-dataset pilot is enabled.")
+    import fcntl
+    run_lock = open("/tmp/mcod-aed-import.lock", "w")
+    try:
+        fcntl.flock(run_lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        parser.error("Another importer is already running.")
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mcod.settings.replit")
     import django
     django.setup()
+    from scripts.aed_import_storage import configure_import_storage
+    configure_import_storage()
+    if args.report and args.verify:
+        from scripts.aed_import_verify import verify_existing_import
+        before = snapshot()
+        report = verify_existing_import(json.loads(REPORT.read_text()), MANIFEST)
+        after = snapshot()
+        report["verification"]["final_read_only_check"] = {
+            "counts_unchanged": before["counts"] == after["counts"],
+            "code_unchanged": before["mcod_code_sha256"] == after["mcod_code_sha256"],
+            "schema_unchanged": before["schema_sha256"] == after["schema_sha256"],
+        }
+        atomic_json(REPORT, report)
+        REPORT.with_suffix(".md").write_text(report_markdown(report), encoding="utf-8")
+        print(json.dumps({"status": report["status"], "counts": report["counts"]}, ensure_ascii=False))
+        return
     report = {"timestamp": datetime.now(timezone.utc).isoformat(), "status": "started",
               "errors": [], "verification": {}, "imported": {}, "counts": {
                   "imported_institutions": 0, "imported_datasets": 0, "imported_resources": 0,
@@ -276,7 +324,7 @@ def main():
         }
         report["verification"]["import_api_tests"] = "not_run_no_import"
         report["verification"]["original_validation"] = inspect_original_validation(bundle)
-        report["counts"]["blocking_empty_field_errors"] = sum(
+        report["counts"]["raw_model_empty_field_differences"] = sum(
             bool(item.get("full_clean_field_errors", {}).get("null"))
             for item in report["verification"]["original_validation"].values()
             if isinstance(item, dict)
@@ -287,10 +335,22 @@ def main():
             report["status"] = "dry_run_passed"
         else:
             previous = json.loads(REPORT.read_text()) if REPORT.exists() else {}
-            if previous.get("status") not in ("dry_run_passed", "imported") or previous.get(
-                    "selected_dataset") != bundle["dataset"]["id"]:
+            recovering = (args.resume and MANIFEST.exists() and
+                          "dataset:" + bundle["dataset"]["id"] in
+                          json.loads(MANIFEST.read_text()).get("objects", {}))
+            if not recovering and (previous.get("status") not in ("dry_run_passed", "imported") or previous.get(
+                    "selected_dataset") != bundle["dataset"]["id"]):
                 raise ImportBlocked("Run a successful dry-run for the selected dataset before importing.")
             report["imported"] = import_bundle(bundle, assessment, prepared, client, MANIFEST, args.resume)
+            imported = report["imported"]
+            report["counts"].update({
+                "imported_institutions": 1, "imported_datasets": 1,
+                "imported_resources": len(imported["resources"]),
+                "aed_rows_counted": sum(r["records"] for r in imported["resources"]
+                                        if r["records"] is not None),
+                "stored_original_bytes": sum(r["bytes"] for r in imported["resources"]),
+            })
+            report["verification"]["import_api_tests"] = "passed"
             report["status"] = "imported"
         report["counts"].update({"downloaded_files_this_run": client.downloads,
                                  "downloaded_bytes_this_run": client.downloaded_bytes})
@@ -302,6 +362,32 @@ def main():
             report["counts"].update({"downloaded_files_this_run": client.downloads,
                                      "downloaded_bytes_this_run": client.downloaded_bytes})
         after = snapshot()
+        report["counts"]["created_this_run"] = {
+            key: after["counts"][key] - before["counts"][key]
+            for key in ("institutions", "datasets", "resources", "users")
+        }
+        if MANIFEST.exists():
+            state = json.loads(MANIFEST.read_text())
+            from mcod.organizations.models import Organization
+            from mcod.datasets.models import Dataset
+            from mcod.resources.models import Resource
+            owned_rows = {}
+            for kind, model, label in (("institution", Organization, "institutions"),
+                                       ("dataset", Dataset, "datasets"),
+                                       ("resource", Resource, "resources")):
+                owned_rows[kind] = [
+                    {"source_id": entry["source_id"], "local_id": obj.pk, "status": obj.status}
+                    for key, entry in state["objects"].items() if key.startswith(kind + ":")
+                    for obj in model.objects.filter(uuid=entry["uuid"])
+                ]
+                report["counts"]["imported_" + label] = len(owned_rows[kind])
+            report["owned_objects"] = owned_rows
+            stored = [entry for entry in state["files"].values()
+                      if entry.get("app_storage_verified")]
+            report["counts"]["stored_original_files"] = len(stored)
+            report["counts"]["stored_original_bytes"] = sum(entry["bytes"] for entry in stored)
+            report["counts"]["aed_rows_counted"] = sum(
+                entry["records"] for entry in stored if entry["records"] is not None)
         report["verification"].update({
             "code_unchanged": before["mcod_code_sha256"] == after["mcod_code_sha256"],
             "schema_unchanged": before["schema_sha256"] == after["schema_sha256"],
@@ -316,6 +402,8 @@ def main():
         )
         atomic_json(REPORT, report)
         REPORT.with_suffix(".md").write_text(report_markdown(report), encoding="utf-8")
+        run_name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+        atomic_json(Path("reports/aed-import-runs") / (run_name + ".json"), report)
         print(json.dumps({"status": report["status"], "counts": report["counts"],
                           "selected_dataset": report.get("selected_dataset"),
                           "errors": report["errors"]}, ensure_ascii=False))

@@ -17,21 +17,33 @@ class Client:
         self.max_total = max_total
         self.downloaded_bytes = 0
         self.downloads = 0
+        self.trusted_origin = None
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "MCOD-AED-Pilot/1.0", "Accept-Encoding": "identity"})
 
     def request(self, method, url):
         for redirect in range(6):
             parsed = urlsplit(url)
-            if parsed.scheme != "https" or parsed.username or parsed.password or parsed.port not in (None, 443):
+            if (parsed.scheme != "https" or parsed.username or parsed.password or
+                    (parsed.port not in (None, 443) and parsed.netloc != self.trusted_origin)):
                 raise ImportBlocked("Only credential-free standard HTTPS URLs are allowed.")
             addresses = socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM)
-            if not addresses or any(not ipaddress.ip_address(a[4][0]).is_global for a in addresses):
+            # Replit resolves its own preview host to an internal proxy IP.
+            # Only the configured application origin is permitted that exception;
+            # public source file URLs never receive it.
+            if (not addresses or (parsed.netloc != self.trusted_origin and
+                                  any(not ipaddress.ip_address(a[4][0]).is_global for a in addresses))):
                 raise ImportBlocked("Non-public network destination refused.")
             for attempt in range(4):
                 time.sleep(0.3 + attempt)
-                response = self.session.request(method, url, timeout=(10, 35), stream=True,
-                                                allow_redirects=False)
+                try:
+                    response = self.session.request(method, url, timeout=(10, 35), stream=True,
+                                                    allow_redirects=False)
+                except requests.RequestException:
+                    if attempt == 3:
+                        raise
+                    time.sleep(2 ** attempt)
+                    continue
                 if response.status_code not in (429, 500, 502, 503, 504):
                     break
                 retry = response.headers.get("Retry-After", "")
@@ -42,7 +54,11 @@ class Client:
                 response.close()
                 url = target
                 continue
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except requests.HTTPError:
+                response.close()
+                raise
             return response
         raise ImportBlocked("Too many redirects.")
 
@@ -76,7 +92,8 @@ class Client:
                 return
 
     def download(self, url, expected):
-        if not isinstance(expected, int) or expected <= 0 or expected > self.max_file:
+        if (not isinstance(expected, int) or isinstance(expected, bool) or
+                expected <= 0 or expected > self.max_file):
             raise ImportBlocked("File size is unknown or exceeds limit.")
         if expected + self.downloaded_bytes > self.max_total:
             raise ImportBlocked("Total transfer limit exceeded.")

@@ -1,46 +1,86 @@
-# Import AED — zatrzymany na walidacji
+# Bezpieczny import publicznych AED
 
-Skrypt wykonuje wyszukiwanie pięcioma wskazanymi frazami, paginację po ID,
-filtrację wyników rozmytych, odczyt instytucji i zasobów, ocenę rozmiarów oraz
-walidację bez zapisu. Nie zmienia kodu aplikacji, tabel, migracji ani integracji.
+Importer korzysta z istniejących modeli MCOD, oryginalnego przetwarzania plików
+i włączonego ResourcesStorage/App Storage. Nie zmienia kodu MCOD ani schematu,
+nie importuje kont i nie resetuje bazy.
+
+## Polecenia
 
 ```bash
-bash scripts/replit/python.sh scripts/import_aed_from_dane_gov.py --dry-run --limit-datasets 1
-bash scripts/replit/python.sh scripts/import_aed_from_dane_gov.py --dry-run --resume --limit-datasets 1
+# Aktualne metadane tylko czterech wskazanych zbiorów; bez zapisu i pobierania plików:
+bash scripts/replit/python.sh scripts/import_aed_from_dane_gov.py --dry-run --refresh-known --dataset-id 3624 --limit-datasets 1
+
+# Zapis jednego zbioru po udanym dry-run; wznowienie z manifestu:
+bash scripts/replit/python.sh scripts/import_aed_from_dane_gov.py --import --resume --dataset-id 3624 --limit-datasets 1
+
+# Odczytowa kontrola zapisanych plików, API, prywatności szkicu i list admina:
+bash scripts/replit/python.sh scripts/import_aed_from_dane_gov.py --report --verify
+
+# Samo odtworzenie Markdown z JSON, bez sieci i importu:
 bash scripts/replit/python.sh scripts/import_aed_from_dane_gov.py --report
-bash scripts/replit/python.sh -m unittest scripts.test_aed_import
+
+# Testy bez tworzenia bazy testowej:
+bash scripts/replit/python.sh -m unittest scripts.test_aed_import scripts.test_aed_original_validation
 ```
 
-`--resume` wznawia obecnie z kompletnego lokalnego wyniku wyszukiwania.
-Nie jest jeszcze checkpointem częściowo wykonanego importu.
-`--dataset-id` wybiera konkretny zbiór z wyników.
-Domyślne limity wynoszą 10 MiB na plik i 25 MiB łącznie. Nieznane rozmiary
-blokują pobranie. Nie pobiera się całego katalogu.
+Bez `--refresh-known` lub `--resume` uruchamiane jest wyszukiwanie pięciu fraz
+z paginacją po ID i odrzucaniem rozmytych wyników typu LED. Nie jest to
+pełny audyt wszystkich zbiorów publicznego katalogu.
 
-## Stan faktyczny
+## Zabezpieczenia i odwzorowanie
 
-**To nie jest jeszcze ukończony importer.** Wykonanie zgodnie z wymaganiem
-zatrzymano, gdy oryginalne walidatory wykryły brak wymaganych informacji.
-Tryb `--import` istnieje, ale pozostaje bezpiecznie zablokowany; nie ma
-zaimplementowanej, przetestowanej ścieżki zapisu ani obietnicy idempotencji.
-Nie uruchamia on zapisu po nieudanym dry-run.
+- Domyślnie maksymalnie 10 MiB na plik, 25 MiB na uruchomienie i jeden zbiór.
+  Nieznany rozmiar blokuje pobranie. HEAD i GET muszą zgadzać się ze znanym
+  rozmiarem; treść jest ograniczana również podczas odczytu.
+- Publiczne źródła wymagają HTTPS i publicznych adresów IP, również po
+  przekierowaniach. Wyjątek dla wewnętrznego proxy Replit dotyczy tylko
+  odrębnego klienta kontrolującego skonfigurowane API własnej instancji.
+- Ponawiane są przejściowe błędy sieci, HTTP 429/5xx i limit App Storage.
+  Importer ogranicza tempo operacji SDK i współdzieli klienta wyłącznie
+  w swoim procesie; nie zmienia serwera ani uwierzytelniania.
+- Zastosowano `full_clean()`. Jedynie puste opcjonalne fax/abbreviation
+  i nieużywane old_resource_type otrzymują takie wyłączenia, jakie stosują
+  istniejące formularze MCOD. Nie wymyśla się wartości zastępczych.
+  Niepuste wartości przechodzą walidatory pól modelu, bez przekształcania
+  międzynarodowego numeru faksu w krajowy format kontrolki formularza.
+- Instytucja, zbiór i zasób mają odrębne lokalne ID. Manifest zachowuje
+  identyfikatory i pełne publiczne dokumenty źródłowe, licencje i ich warunki,
+  źródłowe URL i daty. Lokalne modified/verified pozostają zarządzane przez MCOD.
+- UUID jest rezerwowany w trwałym manifeście przed wstawieniem rekordu.
+  Pozwala to wznowić zapis bez przejmowania cudzych rekordów. Manifest jest
+  powiązany z bazą; zmiana bazy wymaga osobnego, świadomego procesu.
+- Niepowtarzalne nazwy zachowują źródłową nazwę pliku. Istniejący plik nie
+  jest nadpisywany. Zmieniony plik źródłowy wymaga osobnej decyzji zamiast
+  automatycznej podmiany. Suma SHA-256 kontrolowana jest w App Storage i API.
+- Zasoby powstają jako szkice z pustym linkiem. Oryginalne zadanie waliduje
+  zapisany plik lokalny i przypisuje wewnętrzny URL. Nie uruchamia się
+  pobierania z zewnętrznych linków istniejących zasobów.
+- Błąd oryginalnej walidacji zatrzymuje import; nie usuwa się zapisanych
+  rekordów ani plików. Przed wznowieniem trzeba wyjaśnić błąd. Ponowne
+  uruchomienie nie pobiera ponownie ukończonych plików.
 
-Źródłowa instytucja wybranego małego zbioru nie podaje faksu i skrótu, których
-model wymaga podczas `full_clean()`. Model zasobu wymaga również niepustego
-`old_resource_type`, którego obecny publiczny dokument nie zawiera.
-Nie wyłączono walidatorów i nie wymyślono wartości zastępczych.
+## Wynik wykonania
 
-Przed dalszym etapem potrzebne jest uzgodnienie, jak legalnie odwzorować brakujące
-pola, ewentualnie jawna zgoda na odstępstwo od wymogu pełnej oryginalnej walidacji.
-Nie oznacza to automatycznej konieczności zmiany schematu, ale takiego odstępstwa
-nie przyjęto bez zgody.
+Pilotaż Krosna zakończono: źródło 3624/54632 → lokalny zbiór/zasób 1/1,
+oryginalny CSV 2787 B, 21 wierszy. Powtórzenie nie utworzyło rekordów
+ani nie pobrało pliku ponownie.
 
-Raporty są w `reports/aed_import_report.json` i `.md`; źródłowe publiczne metadane
-w `reports/aed_discovery.json`. Nie ma manifestu utworzonych lokalnych ID, ponieważ
-nie utworzono żadnego rekordu. Żadne urządzenie nie zostało uznane za zweryfikowane.
-Nie wykonano testów pobierania importowanych plików, panelu ani powtórnego importu.
+Przemyśl zaimportowano częściowo. XML, GeoJSON i JSON są opublikowane.
+CSV 62095 zachowano jako szkic po błędzie oryginalnego walidatora:
+puste wartości w kolumnach 7 i 9 zostały rozpoznane jako nieprawidłowe
+liczby całkowite. Nie zmieniono CSV ani nie oznaczono błędu jako sukcesu.
+Nie wykonywano dalszych importów po tym błędzie.
 
-Istniejący ResourcesStorage ma włączone App Storage; sprawdzono dostęp do
-zasobnika bez zapisu. Ograniczenia przyszłego bezpiecznego zapisu obejmują
-atomowy manifest, wznowienie po awarii, kontrolę sygnałów zmiany linku i
-publikacji, bezpieczne niepowtarzalne nazwy plików i weryfikację API.
+Łącznie zapisano 2 instytucje, 2 zbiory, 5 zasobów i 5 oryginalnych
+plików, w tym jeden szkic. Marki i pozostały zasób Przemyśla nie zostały
+uruchomione. Warszawa ma nieznany rozmiar i URL katalogu zamiast
+potwierdzonego pliku JSON.
+
+Każdy zapisany plik ma 21 wierszy. Suma 105 obejmuje alternatywne formaty
+tych samych danych, więc nie jest liczbą unikalnych defibrylatorów.
+
+Raport: `reports/aed_import_report.json` i `.md`.
+Manifest lokalny: `reports/aed_import_manifest.json`; kopia nadrzędna w
+App Storage: `aed-imports/manifest.json`. Historia prób:
+`reports/aed-import-runs/`. Test idempotencji pilota:
+`reports/aed-pilot-idempotency.json`.

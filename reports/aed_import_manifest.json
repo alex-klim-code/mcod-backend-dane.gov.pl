@@ -1,0 +1,911 @@
+{
+  "version": 1,
+  "database_binding": "4d0e6bc74c9af8c3d6746fa26c3609035c157aee8360d3d8aa1efd916e0e2353",
+  "objects": {
+    "institution:229": {
+      "uuid": "e517f21e-d8d0-43f7-8b8f-a5e6ef677351",
+      "source_id": "229",
+      "source_url": "https://api.dane.gov.pl/1.4/institutions/229,urzad-miasta-krosna",
+      "source": {
+        "relationships": {
+          "resources": {
+            "meta": {
+              "count": 29
+            }
+          },
+          "datasets": {
+            "meta": {
+              "count": 11
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/institutions/229,urzad-miasta-krosna/datasets"
+            }
+          }
+        },
+        "attributes": {
+          "fax": null,
+          "institution_type": "local",
+          "website": "https://krosno.pl/",
+          "title": "Urząd Miasta Krosna",
+          "slug": "urzad-miasta-krosna",
+          "abbreviation": null,
+          "regon": "000526989",
+          "city": "Krosno",
+          "email": "um@um.krosno.pl",
+          "modified": "2022-07-21 17:16:46.466123+00:00",
+          "image_url": "/media/images/organizations/20220603/herb-umkrosna.png",
+          "street": "Lwowska",
+          "created": "2022-06-03 12:29:16.897601+00:00",
+          "street_type": "ul.",
+          "notes": "",
+          "sources": [],
+          "epuap": "http://epuap.gov.pl/wps/portal/strefa-klienta/katalog-spraw/profil-urzedu/UMKrosna/",
+          "electronic_delivery_address": null,
+          "street_number": "28A",
+          "tel": "0048134743001",
+          "description": "",
+          "postal_code": "38-400",
+          "flat_number": null
+        },
+        "type": "institution",
+        "links": {
+          "self": "https://api.dane.gov.pl/1.4/institutions/229,urzad-miasta-krosna"
+        },
+        "id": "229"
+      },
+      "local_id": 1
+    },
+    "dataset:3624": {
+      "uuid": "4986aca4-4455-4f7f-844e-74506c136fa9",
+      "source_id": "3624",
+      "source_url": "https://api.dane.gov.pl/1.4/datasets/3624,defibrylatory-zlokalizowane-w-miescie-krosno",
+      "source": {
+        "attributes": {
+          "license_condition_default_cc40": false,
+          "title": "Defibrylatory zlokalizowane w Mieście Krosno",
+          "downloads_count": 212,
+          "modified": "2024-03-19T19:17:59Z",
+          "image_url": "",
+          "image_alt": "",
+          "has_dynamic_data": false,
+          "regions": [
+            {
+              "is_additional": false,
+              "name": "Polska",
+              "region_id": "85633723",
+              "hierarchy_label": "Polska"
+            }
+          ],
+          "slug": "defibrylatory-zlokalizowane-w-miescie-krosno",
+          "source": null,
+          "has_research_data": false,
+          "notes": "<p>Defibrylatory zlokalizowane w Mieście Krosno</p>",
+          "is_liked_by_current_user": false,
+          "keywords": [
+            "Defibrylator"
+          ],
+          "license_condition_timestamp": null,
+          "visualization_types": [
+            "map",
+            "table"
+          ],
+          "license_condition_original": null,
+          "license_condition_custom_description": "",
+          "update_frequency": "Nie dotyczy",
+          "formats": [
+            "csv",
+            "jsonld"
+          ],
+          "license_condition_personal_data": null,
+          "current_condition_descriptions": {},
+          "types": [
+            "file"
+          ],
+          "url": "",
+          "views_count": 1026,
+          "openness_scores": [
+            4
+          ],
+          "has_high_value_data_from_ec_list": null,
+          "likes_count": 0,
+          "archived_resources_files_url": "https://api.dane.gov.pl/datasets/3624,defibrylatory-zlokalizowane-w-miescie-krosno/resources/files/download",
+          "license_name": "CC0 1.0",
+          "is_promoted": false,
+          "license_chosen": null,
+          "has_high_value_data": false,
+          "categories": [
+            {
+              "title": "Ludność i społeczeństwo",
+              "id": "146",
+              "code": "SOCI"
+            },
+            {
+              "title": "Zdrowie",
+              "id": "147",
+              "code": "HEAL"
+            }
+          ],
+          "category": null,
+          "created": "2024-02-19T15:05:06Z",
+          "verified": "2024-02-19T17:20:29Z",
+          "supplements": [],
+          "license_condition_db_or_copyrighted": "",
+          "license_description": ""
+        },
+        "id": "3624",
+        "links": {
+          "self": "https://api.dane.gov.pl/1.4/datasets/3624,defibrylatory-zlokalizowane-w-miescie-krosno"
+        },
+        "type": "dataset",
+        "relationships": {
+          "institution": {
+            "data": {
+              "id": "229",
+              "type": "institution"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/institutions/229,urzad-miasta-krosna"
+            }
+          },
+          "showcases": {
+            "meta": {
+              "count": 0
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/datasets/3624,defibrylatory-zlokalizowane-w-miescie-krosno/showcases"
+            }
+          },
+          "resources": {
+            "meta": {
+              "count": 1
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/datasets/3624,defibrylatory-zlokalizowane-w-miescie-krosno/resources"
+            }
+          }
+        }
+      },
+      "local_id": 1
+    },
+    "resource:54632": {
+      "uuid": "42939d41-4b75-4826-a51a-ea057ed770b4",
+      "source_id": "54632",
+      "source_url": "https://api.dane.gov.pl/1.4/resources/54632,defibrylatory-zlokalizowane-w-miescie-krosno",
+      "source": {
+        "relationships": {
+          "tabular_data": {
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/resources/54632/data"
+            },
+            "data": {
+              "type": "tabular_data",
+              "id": "54632"
+            }
+          },
+          "geo_data": {
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/resources/54632/geo"
+            },
+            "data": {
+              "type": "geo_data",
+              "id": "54632"
+            }
+          },
+          "institution": {
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/institutions/229,urzad-miasta-krosna"
+            },
+            "data": {
+              "type": "institution",
+              "id": "229"
+            }
+          },
+          "chart": {
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/resources/54632/chart"
+            },
+            "data": {
+              "type": "chart",
+              "id": "54632"
+            }
+          },
+          "dataset": {
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/datasets/3624,defibrylatory-zlokalizowane-w-miescie-krosno"
+            },
+            "data": {
+              "type": "dataset",
+              "id": "3624"
+            }
+          }
+        },
+        "attributes": {
+          "jsonld_download_url": "https://api.dane.gov.pl/resources/54632,defibrylatory-zlokalizowane-w-miescie-krosno/jsonld",
+          "is_chart_creation_blocked": true,
+          "csv_file_size": null,
+          "supplements": [],
+          "special_signs": [],
+          "title": "Defibrylatory zlokalizowane w Mieście Krosno",
+          "csv_file_url": null,
+          "verified": "2024-02-19T17:22:57Z",
+          "visualization_types": [
+            "map",
+            "table"
+          ],
+          "jsonld_file_size": 26246,
+          "data_date": "2024-02-19",
+          "download_url": "https://api.dane.gov.pl/resources/54632,defibrylatory-zlokalizowane-w-miescie-krosno/file",
+          "media_type": "file",
+          "downloads_count": 211,
+          "jsonld_file_url": "https://api.dane.gov.pl/media/resources/20240219/Defibrylator_jAmxQcp.jsonld",
+          "format": "csv",
+          "modified": "2024-02-19T17:32:25Z",
+          "language": "pl",
+          "created": "2024-02-19T17:20:29Z",
+          "has_dynamic_data": false,
+          "contains_protected_data": false,
+          "file_url": "https://api.dane.gov.pl/media/resources/20240219/Defibrylator_jAmxQcp.csv",
+          "views_count": 1010,
+          "has_high_value_data": false,
+          "openness_score": 4,
+          "files": [
+            {
+              "openness_score": 3,
+              "download_url": "https://api.dane.gov.pl/resources/54632,defibrylatory-zlokalizowane-w-miescie-krosno/file",
+              "format": "csv",
+              "file_size": 2787
+            },
+            {
+              "openness_score": 4,
+              "download_url": "https://api.dane.gov.pl/resources/54632,defibrylatory-zlokalizowane-w-miescie-krosno/jsonld",
+              "format": "jsonld",
+              "file_size": 26246
+            }
+          ],
+          "has_high_value_data_from_ec_list": null,
+          "has_research_data": false,
+          "link": "https://api.dane.gov.pl/media/resources/20240219/Defibrylator_jAmxQcp.csv",
+          "regions": [
+            {
+              "name": "Polska",
+              "region_id": "85633723",
+              "hierarchy_label": "Polska"
+            }
+          ],
+          "description": "<p><a href=\"https://admin.dane.gov.pl/datasets/dataset/3624/change/\">Defibrylatory zlokalizowane w Mieście Krosno</a></p>",
+          "csv_download_url": null,
+          "file_size": 2787
+        },
+        "type": "resource",
+        "links": {
+          "self": "https://api.dane.gov.pl/1.4/resources/54632,defibrylatory-zlokalizowane-w-miescie-krosno"
+        },
+        "id": "54632"
+      },
+      "local_id": 1
+    },
+    "institution:145": {
+      "uuid": "43225ab6-1876-467f-bfd9-fed09a246dd7",
+      "source_id": "145",
+      "source_url": "https://api.dane.gov.pl/1.4/institutions/145,urzad-miejski-w-przemyslu",
+      "source": {
+        "relationships": {
+          "resources": {
+            "meta": {
+              "count": 93
+            }
+          },
+          "datasets": {
+            "meta": {
+              "count": 28
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/institutions/145,urzad-miejski-w-przemyslu/datasets"
+            }
+          }
+        },
+        "attributes": {
+          "fax": "0048166786449",
+          "institution_type": "local",
+          "website": "https://www.przemysl.pl/",
+          "title": "Urząd Miejski w Przemyślu",
+          "slug": "urzad-miejski-w-przemyslu",
+          "abbreviation": null,
+          "regon": "650900341",
+          "city": "Przemyśl",
+          "email": "mail@um.przemysl.pl",
+          "modified": "2019-02-01 11:53:51.242566+00:00",
+          "image_url": "/media/images/organizations/20190201/herb_przemysl.png",
+          "street": "Rynek",
+          "created": "2019-02-01 11:53:51.214209+00:00",
+          "street_type": "rynek",
+          "notes": "",
+          "sources": [],
+          "epuap": "https://epuap.gov.pl/wps/portal/strefa-klienta/katalog-spraw/profil-urzedu//1srwa0y68c/",
+          "electronic_delivery_address": null,
+          "street_number": "1",
+          "tel": "0048166786820",
+          "description": "",
+          "postal_code": "37-700",
+          "flat_number": null
+        },
+        "type": "institution",
+        "links": {
+          "self": "https://api.dane.gov.pl/1.4/institutions/145,urzad-miejski-w-przemyslu"
+        },
+        "id": "145"
+      },
+      "local_id": 2
+    },
+    "dataset:4581": {
+      "uuid": "dbcbe4fd-078d-4d87-b13f-14882ac635fa",
+      "source_id": "4581",
+      "source_url": "https://api.dane.gov.pl/1.4/datasets/4581,lokalizacje-aed-automatycznych-defibrylatorow-zewn",
+      "source": {
+        "attributes": {
+          "license_condition_default_cc40": false,
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "downloads_count": 515,
+          "modified": "2024-11-06T06:42:45Z",
+          "image_url": "",
+          "image_alt": "",
+          "has_dynamic_data": true,
+          "regions": [
+            {
+              "is_additional": false,
+              "name": "Polska",
+              "region_id": "85633723",
+              "hierarchy_label": "Polska"
+            }
+          ],
+          "slug": "lokalizacje-aed-automatycznych-defibrylatorow-zewn",
+          "source": null,
+          "has_research_data": true,
+          "notes": "<p>Zbiór danych zawiera informacje o lokalizacjach automatycznych defibrylatorów zewnętrznych (AED) dostępnych w przestrzeni publicznej miasta Przemyśla. Defibrylatory AED to urządzenia medyczne, które są łatwe w obsłudze i przeznaczone do użytku przez osoby bez specjalistycznego przeszkolenia. Służą do ratowania życia w przypadku nagłego zatrzymania krążenia (NZK), dostarczając impuls elektryczny do serca, co może przywrócić jego normalny rytm.</p>\r\n\r\n<p>Dane o lokalizacjach AED są aktualizowane w czasie zbliżonym do rzeczywistego dzięki API, co pozwala użytkownikom na dostęp do najnowszych informacji o dostępności tych urządzeń w mieście. Informacje mogą być przydatne dla mieszkańców oraz służb ratunkowych w sytuacjach nagłych, gdzie szybka lokalizacja najbliższego AED może uratować życie.</p>\r\n\r\n<p>Ten zbiór danych może być również wartościowym zasobem dla aplikacji mobilnych oraz systemów informacyjnych, które chcą zwiększyć bezpieczeństwo mieszkańców i odwiedzających miasto.</p>",
+          "is_liked_by_current_user": false,
+          "keywords": [
+            "bezpieczeństwo",
+            "zdrowie",
+            "Defibrylator",
+            "zdrowie publiczne",
+            "AED"
+          ],
+          "license_condition_timestamp": null,
+          "visualization_types": [],
+          "license_condition_original": null,
+          "license_condition_custom_description": "",
+          "update_frequency": "Codziennie",
+          "formats": [
+            "csv",
+            "geojson",
+            "json",
+            "xml"
+          ],
+          "license_condition_personal_data": null,
+          "current_condition_descriptions": {},
+          "types": [
+            "file"
+          ],
+          "url": "https://przemysl.pl/45/mapa-interaktywna.html#/map?category=54",
+          "views_count": 1066,
+          "openness_scores": [
+            3,
+            4
+          ],
+          "has_high_value_data_from_ec_list": null,
+          "likes_count": 0,
+          "archived_resources_files_url": "https://api.dane.gov.pl/datasets/4581,lokalizacje-aed-automatycznych-defibrylatorow-zewn/resources/files/download",
+          "license_name": "CC0 1.0",
+          "is_promoted": false,
+          "license_chosen": null,
+          "has_high_value_data": true,
+          "categories": [
+            {
+              "title": "Ludność i społeczeństwo",
+              "id": "146",
+              "code": "SOCI"
+            },
+            {
+              "title": "Zdrowie",
+              "id": "147",
+              "code": "HEAL"
+            }
+          ],
+          "category": null,
+          "created": "2024-11-06T06:40:48Z",
+          "verified": "2024-11-20T09:40:20Z",
+          "supplements": [],
+          "license_condition_db_or_copyrighted": "",
+          "license_description": ""
+        },
+        "id": "4581",
+        "links": {
+          "self": "https://api.dane.gov.pl/1.4/datasets/4581,lokalizacje-aed-automatycznych-defibrylatorow-zewn"
+        },
+        "type": "dataset",
+        "relationships": {
+          "institution": {
+            "data": {
+              "id": "145",
+              "type": "institution"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/institutions/145,urzad-miejski-w-przemyslu"
+            }
+          },
+          "showcases": {
+            "meta": {
+              "count": 0
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/datasets/4581,lokalizacje-aed-automatycznych-defibrylatorow-zewn/showcases"
+            }
+          },
+          "resources": {
+            "meta": {
+              "count": 5
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/datasets/4581,lokalizacje-aed-automatycznych-defibrylatorow-zewn/resources"
+            }
+          }
+        }
+      },
+      "local_id": 2
+    },
+    "resource:62092": {
+      "uuid": "1077fe95-5f84-454b-a567-436d4c3c83e1",
+      "source_id": "62092",
+      "source_url": "https://api.dane.gov.pl/1.4/resources/62092,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu",
+      "source": {
+        "attributes": {
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "downloads_count": 80,
+          "modified": "2024-11-06T06:42:29Z",
+          "has_dynamic_data": true,
+          "regions": [
+            {
+              "name": "Polska",
+              "region_id": "85633723",
+              "hierarchy_label": "Polska"
+            }
+          ],
+          "file_url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.gml",
+          "file_size": 49361,
+          "has_research_data": true,
+          "is_chart_creation_blocked": false,
+          "download_url": "https://api.dane.gov.pl/resources/62092,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu/file",
+          "jsonld_file_size": null,
+          "visualization_types": [],
+          "csv_download_url": null,
+          "link": "https://przemysl.skycms.com.pl/open-data/20/1730818801_b50R6UVxPgoVdBbq/gml",
+          "contains_protected_data": false,
+          "format": "xml",
+          "media_type": "file",
+          "jsonld_download_url": null,
+          "data_date": "2024-11-06",
+          "language": "pl",
+          "views_count": 189,
+          "openness_score": 4,
+          "has_high_value_data_from_ec_list": null,
+          "description": "<p>Zbiór danych zawiera informacje o lokalizacjach automatycznych defibrylatorów zewnętrznych (AED) dostępnych w przestrzeni publicznej miasta Przemyśla. Defibrylatory AED to urządzenia medyczne, które są łatwe w obsłudze i przeznaczone do użytku przez osoby bez specjalistycznego przeszkolenia. Służą do ratowania życia w przypadku nagłego zatrzymania krążenia (NZK), dostarczając impuls elektryczny do serca, co może przywrócić jego normalny rytm.</p>\r\n\r\n<p>Dane o lokalizacjach AED są aktualizowane w czasie zbliżonym do rzeczywistego dzięki API, co pozwala użytkownikom na dostęp do najnowszych informacji o dostępności tych urządzeń w mieście. Informacje mogą być przydatne dla mieszkańców oraz służb ratunkowych w sytuacjach nagłych, gdzie szybka lokalizacja najbliższego AED może uratować życie.</p>\r\n\r\n<p>Ten zbiór danych może być również wartościowym zasobem dla aplikacji mobilnych oraz systemów informacyjnych, które chcą zwiększyć bezpieczeństwo mieszkańców i odwiedzających miasto.</p>",
+          "files": [
+            {
+              "openness_score": 4,
+              "file_size": 49361,
+              "format": "xml",
+              "download_url": "https://api.dane.gov.pl/resources/62092,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu/file"
+            }
+          ],
+          "has_high_value_data": true,
+          "csv_file_url": null,
+          "created": "2024-11-06T06:42:29Z",
+          "special_signs": [],
+          "jsonld_file_url": null,
+          "verified": "2024-11-06T06:42:33Z",
+          "csv_file_size": null,
+          "supplements": []
+        },
+        "id": "62092",
+        "links": {
+          "self": "https://api.dane.gov.pl/1.4/resources/62092,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu"
+        },
+        "type": "resource",
+        "relationships": {
+          "institution": {
+            "data": {
+              "id": "145",
+              "type": "institution"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/institutions/145,urzad-miejski-w-przemyslu"
+            }
+          },
+          "dataset": {
+            "data": {
+              "id": "4581",
+              "type": "dataset"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/datasets/4581,lokalizacje-aed-automatycznych-defibrylatorow-zewn"
+            }
+          }
+        }
+      },
+      "local_id": 2
+    },
+    "resource:62093": {
+      "uuid": "9ea1f8e8-60b1-4d69-a51c-2e5702bb37be",
+      "source_id": "62093",
+      "source_url": "https://api.dane.gov.pl/1.4/resources/62093,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu",
+      "source": {
+        "attributes": {
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "downloads_count": 116,
+          "modified": "2024-11-06T06:45:11Z",
+          "has_dynamic_data": true,
+          "regions": [
+            {
+              "name": "Polska",
+              "region_id": "85633723",
+              "hierarchy_label": "Polska"
+            }
+          ],
+          "file_url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.geojson",
+          "file_size": 48823,
+          "has_research_data": true,
+          "is_chart_creation_blocked": false,
+          "download_url": "https://api.dane.gov.pl/resources/62093,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu/file",
+          "jsonld_file_size": null,
+          "visualization_types": [],
+          "csv_download_url": null,
+          "link": "https://przemysl.skycms.com.pl/open-data/20/1730818801_b50R6UVxPgoVdBbq/geojson",
+          "contains_protected_data": false,
+          "format": "geojson",
+          "media_type": "file",
+          "jsonld_download_url": null,
+          "data_date": "2024-11-06",
+          "language": "pl",
+          "views_count": 206,
+          "openness_score": 3,
+          "has_high_value_data_from_ec_list": null,
+          "description": "<p>Zbiór danych zawiera informacje o lokalizacjach automatycznych defibrylatorów zewnętrznych (AED) dostępnych w przestrzeni publicznej miasta Przemyśla. Defibrylatory AED to urządzenia medyczne, które są łatwe w obsłudze i przeznaczone do użytku przez osoby bez specjalistycznego przeszkolenia. Służą do ratowania życia w przypadku nagłego zatrzymania krążenia (NZK), dostarczając impuls elektryczny do serca, co może przywrócić jego normalny rytm.</p>\r\n\r\n<p>Dane o lokalizacjach AED są aktualizowane w czasie zbliżonym do rzeczywistego dzięki API, co pozwala użytkownikom na dostęp do najnowszych informacji o dostępności tych urządzeń w mieście. Informacje mogą być przydatne dla mieszkańców oraz służb ratunkowych w sytuacjach nagłych, gdzie szybka lokalizacja najbliższego AED może uratować życie.</p>\r\n\r\n<p>Ten zbiór danych może być również wartościowym zasobem dla aplikacji mobilnych oraz systemów informacyjnych, które chcą zwiększyć bezpieczeństwo mieszkańców i odwiedzających miasto.</p>",
+          "files": [
+            {
+              "openness_score": 3,
+              "file_size": 48823,
+              "format": "geojson",
+              "download_url": "https://api.dane.gov.pl/resources/62093,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu/file"
+            }
+          ],
+          "has_high_value_data": true,
+          "csv_file_url": null,
+          "created": "2024-11-06T06:45:11Z",
+          "special_signs": [],
+          "jsonld_file_url": null,
+          "verified": "2024-11-06T06:45:14Z",
+          "csv_file_size": null,
+          "supplements": []
+        },
+        "id": "62093",
+        "links": {
+          "self": "https://api.dane.gov.pl/1.4/resources/62093,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu"
+        },
+        "type": "resource",
+        "relationships": {
+          "institution": {
+            "data": {
+              "id": "145",
+              "type": "institution"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/institutions/145,urzad-miejski-w-przemyslu"
+            }
+          },
+          "related_resource": {
+            "data": {
+              "id": "62092",
+              "type": "resource"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/resources/62092,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu"
+            }
+          },
+          "dataset": {
+            "data": {
+              "id": "4581",
+              "type": "dataset"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/datasets/4581,lokalizacje-aed-automatycznych-defibrylatorow-zewn"
+            }
+          }
+        }
+      },
+      "local_id": 3
+    },
+    "resource:62094": {
+      "uuid": "d95ceefd-cebf-4393-b060-362f22a9bcc8",
+      "source_id": "62094",
+      "source_url": "https://api.dane.gov.pl/1.4/resources/62094,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu",
+      "source": {
+        "attributes": {
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "downloads_count": 91,
+          "modified": "2024-11-06T06:47:30Z",
+          "has_dynamic_data": true,
+          "regions": [
+            {
+              "name": "Polska",
+              "region_id": "85633723",
+              "hierarchy_label": "Polska"
+            }
+          ],
+          "file_url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.json",
+          "file_size": 48468,
+          "has_research_data": true,
+          "is_chart_creation_blocked": false,
+          "download_url": "https://api.dane.gov.pl/resources/62094,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu/file",
+          "jsonld_file_size": null,
+          "visualization_types": [],
+          "csv_download_url": null,
+          "link": "https://przemysl.skycms.com.pl/open-data/20/1730818801_b50R6UVxPgoVdBbq/json",
+          "contains_protected_data": false,
+          "format": "json",
+          "media_type": "file",
+          "jsonld_download_url": null,
+          "data_date": "2024-11-06",
+          "language": "pl",
+          "views_count": 246,
+          "openness_score": 3,
+          "has_high_value_data_from_ec_list": null,
+          "description": "<p>Zbiór danych zawiera informacje o lokalizacjach automatycznych defibrylatorów zewnętrznych (AED) dostępnych w przestrzeni publicznej miasta Przemyśla. Defibrylatory AED to urządzenia medyczne, które są łatwe w obsłudze i przeznaczone do użytku przez osoby bez specjalistycznego przeszkolenia. Służą do ratowania życia w przypadku nagłego zatrzymania krążenia (NZK), dostarczając impuls elektryczny do serca, co może przywrócić jego normalny rytm.</p>\r\n\r\n<p>Dane o lokalizacjach AED są aktualizowane w czasie zbliżonym do rzeczywistego dzięki API, co pozwala użytkownikom na dostęp do najnowszych informacji o dostępności tych urządzeń w mieście. Informacje mogą być przydatne dla mieszkańców oraz służb ratunkowych w sytuacjach nagłych, gdzie szybka lokalizacja najbliższego AED może uratować życie.</p>\r\n\r\n<p>Ten zbiór danych może być również wartościowym zasobem dla aplikacji mobilnych oraz systemów informacyjnych, które chcą zwiększyć bezpieczeństwo mieszkańców i odwiedzających miasto.</p>",
+          "files": [
+            {
+              "openness_score": 3,
+              "file_size": 48468,
+              "format": "json",
+              "download_url": "https://api.dane.gov.pl/resources/62094,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu/file"
+            }
+          ],
+          "has_high_value_data": true,
+          "csv_file_url": null,
+          "created": "2024-11-06T06:47:30Z",
+          "special_signs": [],
+          "jsonld_file_url": null,
+          "verified": "2024-11-06T06:47:33Z",
+          "csv_file_size": null,
+          "supplements": []
+        },
+        "id": "62094",
+        "links": {
+          "self": "https://api.dane.gov.pl/1.4/resources/62094,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu"
+        },
+        "type": "resource",
+        "relationships": {
+          "institution": {
+            "data": {
+              "id": "145",
+              "type": "institution"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/institutions/145,urzad-miejski-w-przemyslu"
+            }
+          },
+          "related_resource": {
+            "data": {
+              "id": "62093",
+              "type": "resource"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/resources/62093,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu"
+            }
+          },
+          "dataset": {
+            "data": {
+              "id": "4581",
+              "type": "dataset"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/datasets/4581,lokalizacje-aed-automatycznych-defibrylatorow-zewn"
+            }
+          }
+        }
+      },
+      "local_id": 4
+    },
+    "resource:62095": {
+      "uuid": "5a096068-da2f-441c-ba42-f828acb8cb37",
+      "source_id": "62095",
+      "source_url": "https://api.dane.gov.pl/1.4/resources/62095,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu",
+      "source": {
+        "attributes": {
+          "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+          "downloads_count": 129,
+          "modified": "2024-11-06T06:50:29Z",
+          "has_dynamic_data": true,
+          "regions": [
+            {
+              "name": "Polska",
+              "region_id": "85633723",
+              "hierarchy_label": "Polska"
+            }
+          ],
+          "file_url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.csv",
+          "file_size": 39237,
+          "has_research_data": true,
+          "is_chart_creation_blocked": false,
+          "download_url": "https://api.dane.gov.pl/resources/62095,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu/file",
+          "jsonld_file_size": null,
+          "visualization_types": [],
+          "csv_download_url": null,
+          "link": "https://przemysl.skycms.com.pl/open-data/20/1730818801_b50R6UVxPgoVdBbq/csv",
+          "contains_protected_data": false,
+          "format": "csv",
+          "media_type": "file",
+          "jsonld_download_url": null,
+          "data_date": "2024-11-06",
+          "language": "pl",
+          "views_count": 279,
+          "openness_score": 3,
+          "has_high_value_data_from_ec_list": null,
+          "description": "<p>Zbiór danych zawiera informacje o lokalizacjach automatycznych defibrylatorów zewnętrznych (AED) dostępnych w przestrzeni publicznej miasta Przemyśla. Defibrylatory AED to urządzenia medyczne, które są łatwe w obsłudze i przeznaczone do użytku przez osoby bez specjalistycznego przeszkolenia. Służą do ratowania życia w przypadku nagłego zatrzymania krążenia (NZK), dostarczając impuls elektryczny do serca, co może przywrócić jego normalny rytm.</p>\r\n\r\n<p>Dane o lokalizacjach AED są aktualizowane w czasie zbliżonym do rzeczywistego dzięki API, co pozwala użytkownikom na dostęp do najnowszych informacji o dostępności tych urządzeń w mieście. Informacje mogą być przydatne dla mieszkańców oraz służb ratunkowych w sytuacjach nagłych, gdzie szybka lokalizacja najbliższego AED może uratować życie.</p>\r\n\r\n<p>Ten zbiór danych może być również wartościowym zasobem dla aplikacji mobilnych oraz systemów informacyjnych, które chcą zwiększyć bezpieczeństwo mieszkańców i odwiedzających miasto.</p>",
+          "files": [
+            {
+              "openness_score": 3,
+              "file_size": 39237,
+              "format": "csv",
+              "download_url": "https://api.dane.gov.pl/resources/62095,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu/file"
+            }
+          ],
+          "has_high_value_data": true,
+          "csv_file_url": null,
+          "created": "2024-11-06T06:50:29Z",
+          "special_signs": [],
+          "jsonld_file_url": null,
+          "verified": "2024-11-06T06:50:32Z",
+          "csv_file_size": null,
+          "supplements": []
+        },
+        "id": "62095",
+        "links": {
+          "self": "https://api.dane.gov.pl/1.4/resources/62095,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu"
+        },
+        "type": "resource",
+        "relationships": {
+          "institution": {
+            "data": {
+              "id": "145",
+              "type": "institution"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/institutions/145,urzad-miejski-w-przemyslu"
+            }
+          },
+          "related_resource": {
+            "data": {
+              "id": "62094",
+              "type": "resource"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/resources/62094,lokalizacje-aed-automatycznych-defibrylatorow-zewnetrznych-w-przemyslu"
+            }
+          },
+          "dataset": {
+            "data": {
+              "id": "4581",
+              "type": "dataset"
+            },
+            "links": {
+              "related": "https://api.dane.gov.pl/1.4/datasets/4581,lokalizacje-aed-automatycznych-defibrylatorow-zewn"
+            }
+          }
+        }
+      },
+      "local_id": 5
+    }
+  },
+  "files": {
+    "54632": {
+      "storage_name": "20261122/aed-imports/institution-229/dataset-3624/resource-54632/df46180302634d0b95e8f504f354bd42/Defibrylator_jAmxQcp.csv",
+      "sha256": "bfd98b17099e294174f35ce3fdc9eb617bdf394ba8ebe148ea840419fe2f2370",
+      "bytes": 2787,
+      "records": 21,
+      "source_modified": "2024-02-19T17:32:25Z",
+      "source_url": "https://api.dane.gov.pl/media/resources/20240219/Defibrylator_jAmxQcp.csv",
+      "original_name": "Defibrylator_jAmxQcp.csv",
+      "format": "csv",
+      "phase": "published",
+      "file_id": 1,
+      "app_storage_verified": true,
+      "verification": {
+        "metadata_http": 200,
+        "download_http": 200,
+        "sha256_matches": true,
+        "download_bytes": 2787,
+        "relationships_match": true,
+        "metadata_url": "https://faecd1b7-2189-478f-956a-a2d69e227fb5-00-2l41n67gdvciz.spock.replit.dev:5000/api/resources/1",
+        "download_url": "https://faecd1b7-2189-478f-956a-a2d69e227fb5-00-2l41n67gdvciz.spock.replit.dev:5000/api/resources/1/file"
+      }
+    },
+    "62092": {
+      "storage_name": "20261122/aed-imports/institution-145/dataset-4581/resource-62092/4b6e843365ec4069a998980c52827072/1730818801_b50R6UVxPgoVdBbq.gml",
+      "sha256": "1a73cb47fdd2963a933f2f5319623589013daa03077cae24475047a614699209",
+      "bytes": 49361,
+      "records": 21,
+      "source_modified": "2024-11-06T06:42:29Z",
+      "source_url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.gml",
+      "original_name": "1730818801_b50R6UVxPgoVdBbq.gml",
+      "format": "xml",
+      "phase": "published",
+      "file_id": 2,
+      "app_storage_verified": true,
+      "verification": {
+        "metadata_http": 200,
+        "download_http": 200,
+        "sha256_matches": true,
+        "download_bytes": 49361,
+        "relationships_match": true,
+        "metadata_url": "https://faecd1b7-2189-478f-956a-a2d69e227fb5-00-2l41n67gdvciz.spock.replit.dev:5000/api/resources/2",
+        "download_url": "https://faecd1b7-2189-478f-956a-a2d69e227fb5-00-2l41n67gdvciz.spock.replit.dev:5000/api/resources/2/file"
+      }
+    },
+    "62093": {
+      "storage_name": "20261122/aed-imports/institution-145/dataset-4581/resource-62093/6dbf4feb00be43f29e11d1b7209fc921/1730818801_b50R6UVxPgoVdBbq.geojson",
+      "sha256": "2f49fe5394c1eb9e841ad5921b19c1cade6b843278d7283534658f0caba01797",
+      "bytes": 48823,
+      "records": 21,
+      "source_modified": "2024-11-06T06:45:11Z",
+      "source_url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.geojson",
+      "original_name": "1730818801_b50R6UVxPgoVdBbq.geojson",
+      "format": "geojson",
+      "phase": "published",
+      "file_id": 3,
+      "app_storage_verified": true,
+      "verification": {
+        "metadata_http": 200,
+        "download_http": 200,
+        "sha256_matches": true,
+        "download_bytes": 48823,
+        "relationships_match": true,
+        "metadata_url": "https://faecd1b7-2189-478f-956a-a2d69e227fb5-00-2l41n67gdvciz.spock.replit.dev:5000/api/resources/3",
+        "download_url": "https://faecd1b7-2189-478f-956a-a2d69e227fb5-00-2l41n67gdvciz.spock.replit.dev:5000/api/resources/3/file"
+      }
+    },
+    "62094": {
+      "storage_name": "20261122/aed-imports/institution-145/dataset-4581/resource-62094/102ae2db419d49b8ab5239e64fb81710/1730818801_b50R6UVxPgoVdBbq.json",
+      "sha256": "4e801e202a45e42a96bd608ceb4b128e13f64830f06e31960d4e8bfa39dd3c29",
+      "bytes": 48468,
+      "records": 21,
+      "source_modified": "2024-11-06T06:47:30Z",
+      "source_url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.json",
+      "original_name": "1730818801_b50R6UVxPgoVdBbq.json",
+      "format": "json",
+      "phase": "published",
+      "file_id": 4,
+      "app_storage_verified": true,
+      "verification": {
+        "metadata_http": 200,
+        "download_http": 200,
+        "sha256_matches": true,
+        "download_bytes": 48468,
+        "relationships_match": true,
+        "metadata_url": "https://faecd1b7-2189-478f-956a-a2d69e227fb5-00-2l41n67gdvciz.spock.replit.dev:5000/api/resources/4",
+        "download_url": "https://faecd1b7-2189-478f-956a-a2d69e227fb5-00-2l41n67gdvciz.spock.replit.dev:5000/api/resources/4/file"
+      }
+    },
+    "62095": {
+      "storage_name": "20261122/aed-imports/institution-145/dataset-4581/resource-62095/70998e8ea0384b9fa764798c2b725d20/1730818801_b50R6UVxPgoVdBbq.csv",
+      "sha256": "11f9e236d35b03b8fb0b5088762ef1ecd8614d9116aeb36e63fb7496090e0030",
+      "bytes": 39237,
+      "records": 21,
+      "source_modified": "2024-11-06T06:50:29Z",
+      "source_url": "https://api.dane.gov.pl/media/resources/20241106/1730818801_b50R6UVxPgoVdBbq.csv",
+      "original_name": "1730818801_b50R6UVxPgoVdBbq.csv",
+      "format": "csv",
+      "phase": "stored",
+      "file_id": 5,
+      "app_storage_verified": true
+    }
+  }
+}

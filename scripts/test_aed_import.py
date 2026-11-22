@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from scripts.import_aed_from_dane_gov import assess, relevant
 from scripts.aed_import_http import Client, ImportBlocked
+from scripts.aed_import_verify import count_records
 
 
 class ImportSafetyTests(unittest.TestCase):
@@ -38,6 +39,25 @@ class ImportSafetyTests(unittest.TestCase):
         with patch.object(client, "json", return_value={"data": rows}):
             with self.assertRaises(ImportBlocked):
                 list(client.pages("https://api.dane.gov.pl/datasets", {}))
+
+    def test_csv_with_long_multiline_quoted_values(self):
+        import io
+        import csv
+        data = io.StringIO()
+        writer = csv.writer(data, delimiter=";")
+        writer.writerow(["nazwa", "opis"])
+        for number in range(21):
+            writer.writerow(["AED " + str(number), ("opis, lokalizacji\n" * 100)])
+        self.assertEqual(count_records(data.getvalue().encode(), "csv"), 21)
+
+    def test_html_is_not_counted_as_csv_data(self):
+        with self.assertRaises(ImportBlocked):
+            count_records(b"<html>catalogue page</html>", "csv")
+
+    def test_counting_alternative_formats_does_not_claim_unique_devices(self):
+        self.assertEqual(count_records(b'{"type":"FeatureCollection","features":[{},{}]}',
+                                       "geojson"), 2)
+        self.assertIsNone(count_records(b'{"documentation":"not a record collection"}', "json"))
 
 
 if __name__ == "__main__":

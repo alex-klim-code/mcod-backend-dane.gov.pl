@@ -1,0 +1,200 @@
+{
+  "timestamp": "2026-11-22T02:01:30.486097+00:00",
+  "status": "blocked",
+  "errors": [
+    "ImportBlocked: Original model/form validation failed: {'institution': ['Wpisz poprawną wartość.', 'Upewnij się, że ta wartość ma co najwyżej 9 znaków (obecnie ma 13).']}"
+  ],
+  "verification": {
+    "import_api_tests": "not_run_no_import",
+    "original_validation": {
+      "fax": {
+        "null": true,
+        "blank": false,
+        "choices": [],
+        "full_clean_field_errors": {
+          "null": [
+            "To pole nie może być puste."
+          ],
+          "empty_string": [
+            "To pole nie może być puste."
+          ]
+        }
+      },
+      "abbreviation": {
+        "null": true,
+        "blank": false,
+        "choices": [],
+        "full_clean_field_errors": {
+          "null": [
+            "To pole nie może być puste."
+          ],
+          "empty_string": [
+            "To pole nie może być puste."
+          ]
+        }
+      },
+      "old_resource_type": {
+        "null": true,
+        "blank": false,
+        "choices": [],
+        "full_clean_field_errors": {
+          "null": [
+            "To pole nie może być puste."
+          ],
+          "empty_string": [
+            "To pole nie może być puste."
+          ]
+        }
+      },
+      "source_institution": {
+        "id": "145",
+        "fax": "0048166786449",
+        "abbreviation": null
+      },
+      "original_form": {
+        "fax_required": false,
+        "abbreviation_required": false,
+        "mechanism": "Django ModelForm._get_validation_exclusions excludes empty optional form fields before calling instance.full_clean(exclude=...). This differs from unrestricted model.full_clean()."
+      }
+    },
+    "code_unchanged": true,
+    "schema_unchanged": true,
+    "before": {
+      "mcod_code_sha256": "640a77a54e14f418163a988f937584ee95b6ac2599f4f51cfb441c4419f6c2c6",
+      "schema_sha256": "ef4e9d72391cfa654ee2f3ee63883b55c2b2478f8b22b1c7404e7914b1388284",
+      "counts": {
+        "institutions": 1,
+        "datasets": 1,
+        "resources": 1,
+        "users": 1
+      }
+    },
+    "after": {
+      "mcod_code_sha256": "640a77a54e14f418163a988f937584ee95b6ac2599f4f51cfb441c4419f6c2c6",
+      "schema_sha256": "ef4e9d72391cfa654ee2f3ee63883b55c2b2478f8b22b1c7404e7914b1388284",
+      "counts": {
+        "institutions": 1,
+        "datasets": 1,
+        "resources": 1,
+        "users": 1
+      }
+    }
+  },
+  "imported": {},
+  "counts": {
+    "imported_institutions": 1,
+    "imported_datasets": 1,
+    "imported_resources": 1,
+    "downloaded_files_this_run": 0,
+    "downloaded_bytes_this_run": 0,
+    "aed_rows_counted": 21,
+    "found_institutions": 4,
+    "found_datasets": 4,
+    "found_resources": 9,
+    "raw_model_empty_field_differences": 3,
+    "created_this_run": {
+      "institutions": 0,
+      "datasets": 0,
+      "resources": 0,
+      "users": 0
+    },
+    "stored_original_files": 1,
+    "stored_original_bytes": 2787
+  },
+  "limits": {
+    "file_bytes": 10485760,
+    "total_bytes": 26214400
+  },
+  "discovery": [
+    {
+      "source_dataset_id": "3624",
+      "title": "Defibrylatory zlokalizowane w Mieście Krosno",
+      "source_institution_id": "229",
+      "resource_ids": [
+        "54632"
+      ],
+      "eligible": true,
+      "known_bytes": 2787,
+      "skipped": []
+    },
+    {
+      "source_dataset_id": "4581",
+      "title": "Lokalizacje AED – Automatycznych Defibrylatorów Zewnętrznych w Przemyślu",
+      "source_institution_id": "145",
+      "resource_ids": [
+        "62092",
+        "62093",
+        "62094",
+        "62095",
+        "62424"
+      ],
+      "eligible": true,
+      "known_bytes": 235250,
+      "skipped": []
+    },
+    {
+      "source_dataset_id": "4955",
+      "title": "Defibrylatory zlokalizowane na terenie Miasta Marki",
+      "source_institution_id": "537",
+      "resource_ids": [
+        "68353",
+        "68355"
+      ],
+      "eligible": true,
+      "known_bytes": 11079,
+      "skipped": []
+    },
+    {
+      "source_dataset_id": "39512",
+      "title": "Lokalizacja defibrylatorów (AED)",
+      "source_institution_id": "7621",
+      "resource_ids": [
+        "2512040"
+      ],
+      "eligible": false,
+      "known_bytes": 0,
+      "skipped": [
+        {
+          "source_resource_id": "2512040",
+          "reason": "Unknown file size; no download authorized"
+        }
+      ]
+    }
+  ],
+  "selected_dataset": "4581",
+  "selected_source_ids": {
+    "institution": "145",
+    "dataset": "4581",
+    "resources": [
+      "62092",
+      "62093",
+      "62094",
+      "62095",
+      "62424"
+    ]
+  },
+  "owned_objects": {
+    "institution": [
+      {
+        "source_id": "229",
+        "local_id": 1,
+        "status": "published"
+      }
+    ],
+    "dataset": [
+      {
+        "source_id": "3624",
+        "local_id": 1,
+        "status": "published"
+      }
+    ],
+    "resource": [
+      {
+        "source_id": "54632",
+        "local_id": 1,
+        "status": "published"
+      }
+    ]
+  },
+  "discovery_scope": "Five requested keyword searches with ID-cursor pagination, then AED/defibrylat matching in public metadata. This does not prove detection of every unlabelled or otherwise unsearchable AED dataset."
+}
