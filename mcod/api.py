@@ -10,7 +10,7 @@ import falcon
 import sentry_sdk
 from django.conf import settings
 from falcon import DEFAULT_MEDIA_TYPE
-from falcon.media import JSONHandler
+from falcon.media import JSONHandler, MultipartFormHandler
 from falcon.request import Request
 from falcon.response import Response
 from webargs import falconparser
@@ -47,6 +47,7 @@ extra_handlers = {
     "application/sparql-results+json": SparqlHandler(),
     "application/sparql-results+xml": SparqlHandler(),
     "application/zip": ZipHandler(),
+    "multipart/form-data": MultipartFormHandler(),
 }
 
 
@@ -118,7 +119,12 @@ def get_api_app(middleware: Optional[list] = None):
     app.add_routes(routes)
     app.add_sink(lambda req, resp: setattr(resp, "media", {"data": None}), "/ping")
     app.add_static_route(settings.STATIC_URL, settings.STATIC_ROOT)
-    app.add_static_route(settings.MEDIA_URL, settings.MEDIA_ROOT)
+    if getattr(settings, "REPLIT_APP_STORAGE_ENABLED", False):
+        from mcod.aed_integration.storage_views import AEDMediaSink
+
+        app.add_sink(AEDMediaSink(), settings.MEDIA_URL)
+    else:
+        app.add_static_route(settings.MEDIA_URL, settings.MEDIA_ROOT)
     app.req_options.strip_url_path_trailing_slash = True
     app.req_options.media_handlers.update(extra_handlers)
     app.resp_options.media_handlers.update(extra_handlers)

@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 export PYTHONPATH="$PWD/.pythonlibs/lib/python3.8/site-packages:$PWD"
-export DJANGO_SETTINGS_MODULE=mcod.settings.replit
+export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-mcod.settings.replit}"
 export JUPYTER_PATH="$PWD/.pythonlibs/lib/python3.8/site-packages/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
 export LIBARCHIVE
 LIBARCHIVE="$(ldd "$(command -v bsdtar)" | awk '/libarchive\.so/ {print $3; exit}')"

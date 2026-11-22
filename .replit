@@ -2,7 +2,7 @@ modules = ["nodejs-20", "python-3.12", "web", "postgresql-16"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["uv", "redis", "rabbitmq-server", "jdk17", "libxml2", "libxslt", "xmlsec", "libarchive", "file", "gettext", "pkg-config", "imagemagick", "libxcrypt"]
+packages = ["uv", "redis", "rabbitmq-server", "jdk17", "libxml2", "libxslt", "xmlsec", "libarchive", "file", "gettext", "pkg-config", "imagemagick", "libxcrypt", "nginx"]
 
 [agent]
 expertMode = true

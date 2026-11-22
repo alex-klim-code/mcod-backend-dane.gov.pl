@@ -9,6 +9,10 @@ uv pip install \
   --python .cache/python/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8 \
   --target .pythonlibs/lib/python3.8/site-packages \
   --no-deps -r generated-artifacts/locked-requirements.txt
+uv pip install \
+  --python .cache/python/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8 \
+  --target .pythonlibs/lib/python3.8/site-packages \
+  --require-hashes --no-deps -r scripts/replit/app-storage-requirements.lock
 
 elastic=.cache/services/elasticsearch-6.8.23
 if [[ ! -x "$elastic/bin/elasticsearch" ]]; then

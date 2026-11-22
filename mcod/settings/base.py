@@ -160,6 +160,7 @@ INSTALLED_APPS = [
     "mcod.showcases",
     "mcod.submissions",
     "mcod.logingovpl",
+    "mcod.aed_integration.apps.AEDIntegrationConfig",
 ]
 
 CMS_MIDDLEWARE = ["mcod.cms.middleware.CounterMiddleware"] if COMPONENT == "cms" else []

@@ -1,4 +1,4 @@
-"""Development-only configuration for the imported project on Replit."""
+"""Development configuration for the imported project on Replit."""
 
 import hashlib
 import hmac
@@ -40,13 +40,18 @@ CSRF_COOKIE_SAMESITE = None
 CSRF_COOKIE_NAME = "csrftoken"
 # The Replit proxy keeps the browser's :5000 port in the HTTPS Referer, while
 # Django can see the same host without that external port. Django 2.2 compares
-# trusted origins as host strings, so trust only this Repl's preview hostname
-# on its configured external web port.
+# trusted origins as host strings, so trust only this Repl's preview hostname.
 _preview_domain = os.environ.get("REPLIT_DEV_DOMAIN", "").strip()
 CSRF_TRUSTED_ORIGINS = (
-    [f"{_preview_domain}:5000"] if _preview_domain else []
+    [origin for origin in (_preview_domain, f"{_preview_domain}:5000") if _preview_domain]
 )
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+API_URL = os.environ.get("API_URL", "/api")
+AED_INTEGRATION_SECRET = os.environ.get("AED_INTEGRATION_SECRET", "")
+AED_REQUIRE_HTTPS = True
+REPLIT_APP_STORAGE_ENABLED = (
+    os.environ.get("MCOD_APP_STORAGE_ENABLED", "").lower() in ("1", "true", "yes")
+)
 
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 EMAIL_FILE_PATH = str(ROOT_DIR.path("generated-artifacts", "mail"))  # noqa: F405

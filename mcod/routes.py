@@ -1,4 +1,5 @@
 from mcod.academy import views as academy_views
+from mcod.aed_integration import views as aed_views
 from mcod.core.api.utils import views as core_views
 from mcod.core.api.views import MetricsResource
 from mcod.datasets import views as dataset_views
@@ -332,6 +333,33 @@ routes = [
     ("/reports/brokenlinks", reports_views.BrokenLinksReportView()),
     ("/reports/brokenlinks/data", reports_views.BrokenLinksReportDataView()),
     ("/reports/brokenlinks/{extension}", reports_views.PublicBrokenLinksReportDownloadView()),
+    # Restricted service-to-service AED Puls integration.
+    ("/integrations/aed/v1/institutions", aed_views.AEDInstitutionsView()),
+    (
+        "/integrations/aed/v1/organizations/{external_organization_id}/datasets",
+        aed_views.AEDDatasetsView(),
+    ),
+    (
+        "/integrations/aed/v1/organizations/{external_organization_id}/datasets/{external_dataset_id}",
+        aed_views.AEDDatasetView(),
+    ),
+    (
+        "/integrations/aed/v1/organizations/{external_organization_id}/datasets/{external_dataset_id}/publish",
+        aed_views.AEDDatasetPublishView(),
+    ),
+    (
+        "/integrations/aed/v1/organizations/{external_organization_id}/datasets/{external_dataset_id}/resources",
+        aed_views.AEDDatasetResourcesView(),
+    ),
+    (
+        "/integrations/aed/v1/organizations/{external_organization_id}/resources/{resource_id:int}",
+        aed_views.AEDResourceView(),
+    ),
+    (
+        "/integrations/aed/v1/organizations/{external_organization_id}/resources/{resource_id:int}/publish",
+        aed_views.AEDResourcePublishView(),
+    ),
+    ("/integrations/aed/v1/aggregate", aed_views.AEDAggregateView()),
 ]
 
 

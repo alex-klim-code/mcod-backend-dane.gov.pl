@@ -1,3 +1,4 @@
 /.cache/
 /.pythonlibs/
 /generated-artifacts/
+/statics/

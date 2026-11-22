@@ -30,6 +30,53 @@ class ResourcesStorage(BaseFileSystemStorage):
         base_url = base_url or "%s" % settings.RESOURCES_URL
         super().__init__(location=location, base_url=base_url, **kwargs)
 
+    @property
+    def app_storage_enabled(self):
+        return getattr(settings, "REPLIT_APP_STORAGE_ENABLED", False)
+
+    def _app_storage_client(self):
+        if not self.app_storage_enabled:
+            return None
+        try:
+            from replit.object_storage import Client
+        except ImportError:
+            raise RuntimeError("Install the Replit App Storage SDK before enabling persistent resource storage.")
+        return Client()
+
+    def _save(self, name, content):
+        saved_name = super()._save(name, content)
+        if not self.app_storage_enabled:
+            return saved_name
+        local_path = super().path(saved_name)
+        try:
+            with open(local_path, "rb") as stored_file:
+                self._app_storage_client().upload_from_bytes(saved_name, stored_file.read())
+        except Exception:
+            # Do not silently accept a local-only upload in production.
+            super().delete(saved_name)
+            raise
+        return saved_name
+
+    def path(self, name):
+        local_path = super().path(name)
+        if os.path.exists(local_path) or not self.app_storage_enabled:
+            return local_path
+        client = self._app_storage_client()
+        if not client.exists(name):
+            return local_path
+        content = client.download_as_bytes(name)
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        with open(local_path, "wb") as local_file:
+            local_file.write(content)
+        return local_path
+
+    def delete(self, name):
+        super().delete(name)
+        if self.app_storage_enabled:
+            client = self._app_storage_client()
+            if client.exists(name):
+                client.delete(name)
+
 
 class WaitingResourcesStorage(BaseFileSystemStorage):
     def __init__(self, location=None, base_url=None, **kwargs):
