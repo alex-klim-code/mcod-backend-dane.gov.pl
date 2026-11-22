@@ -1,1 +1,1 @@
-
+"""AED integration management commands."""

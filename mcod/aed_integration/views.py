@@ -1,11 +1,12 @@
 import hmac
-import json
 import logging
 from functools import wraps
+from io import BytesIO
+from pathlib import Path
+from types import SimpleNamespace
 
 import falcon
 from django.conf import settings
-from django.db import transaction
 from django.utils import timezone
 
 from mcod.aed_integration.models import AEDAggregateState, AEDDatasetMapping, AEDOrganizationMapping
@@ -35,10 +36,10 @@ def authenticate_integration(request):
             description="Configure AED_INTEGRATION_SECRET in Replit Secrets.",
         )
     if getattr(settings, "AED_REQUIRE_HTTPS", False):
-        if request.get_header("X-Forwarded-Proto", "").lower() != "https":
+        if (request.get_header("X-Forwarded-Proto") or "").lower() != "https":
             raise falcon.HTTPBadRequest(description="AED integration requests must use HTTPS.")
 
-    authorization = request.get_header("Authorization", "")
+    authorization = request.get_header("Authorization") or ""
     scheme, _, supplied = authorization.partition(" ")
     if scheme.lower() != "bearer" or not supplied or not hmac.compare_digest(supplied, expected):
         raise falcon.HTTPUnauthorized(
@@ -51,8 +52,19 @@ def authenticate_integration(request):
 def secure(handler):
     @wraps(handler)
     def wrapped(self, request, response, *args, **kwargs):
-        authenticate_integration(request)
-        return handler(self, request, response, *args, **kwargs)
+        response.content_type = "application/json"
+        response.set_header("Cache-Control", "no-store")
+        try:
+            authenticate_integration(request)
+            return handler(self, request, response, *args, **kwargs)
+        except falcon.HTTPError as exc:
+            response.status = exc.status
+            response.media = {
+                "error": {
+                    "code": exc.code or "request_rejected",
+                    "message": exc.description or exc.title,
+                }
+            }
 
     return wrapped
 
@@ -62,6 +74,23 @@ def _payload(request):
         payload = request.get_media()
     except Exception:
         raise falcon.HTTPBadRequest(description="The request body is not valid JSON or multipart form data.")
+    if isinstance(payload, falcon.media.multipart.MultipartForm):
+        values = {}
+        for part in payload:
+            if part.name in values:
+                raise falcon.HTTPBadRequest(description="Duplicate multipart field.")
+            if part.filename:
+                content = part.stream.read(25 * 1024 * 1024 + 1)
+                if len(content) > 25 * 1024 * 1024:
+                    raise falcon.HTTPContentTooLarge(description="File exceeds the 25 MB limit.")
+                values[part.name] = SimpleNamespace(
+                    filename=part.filename,
+                    content_type=part.content_type,
+                    file=BytesIO(content),
+                )
+            else:
+                values[part.name] = part.text
+        return values
     if not isinstance(payload, dict):
         raise falcon.HTTPBadRequest(description="The request body must be an object.")
     return payload
@@ -102,6 +131,25 @@ class AEDInstitutionsView:
 
 
 class AEDDatasetsView:
+    @secure
+    def on_get(self, request, response, external_organization_id):
+        mapping = _mapping_or_404(external_organization_id)
+        response.media = {
+            "data": [
+                {
+                    "external_dataset_id": item.external_dataset_id,
+                    "dataset_id": item.dataset_id,
+                    "title": item.dataset.title,
+                    "status": item.dataset.status,
+                    "metadata_url": "/api/datasets/{}".format(item.dataset_id),
+                }
+                for item in AEDDatasetMapping.objects.filter(
+                    organization_mapping=mapping,
+                    dataset__organization_id=mapping.organization_id,
+                ).select_related("dataset")
+            ]
+        }
+
     @secure
     def on_post(self, request, response, external_organization_id):
         mapping = _mapping_or_404(external_organization_id)
@@ -306,3 +354,10 @@ class AEDAggregateView:
             )
         response.status = falcon.HTTP_202
         response.media = {"status": AEDAggregateState.STATUS_QUEUED, "task_id": task.id}
+
+
+class AEDOpenAPIView:
+    def on_get(self, request, response):
+        spec = Path(str(settings.ROOT_DIR)) / "docs" / "aed-integration" / "openapi.yaml"
+        response.content_type = "application/yaml"
+        response.text = spec.read_text(encoding="utf-8")

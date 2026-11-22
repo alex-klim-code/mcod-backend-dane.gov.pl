@@ -29,6 +29,9 @@ mcod/settings/local.py
 /test-data/
 /frontend/
 /docs/
+!/docs/
+/docs/*
+!/docs/aed-integration/
 /test/
 /logs/
 

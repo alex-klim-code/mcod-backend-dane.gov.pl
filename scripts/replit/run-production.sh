@@ -35,6 +35,7 @@ for attempt in $(seq 1 120); do
 done
 
 COMPONENT=admin bash scripts/replit/python.sh manage.py aed_storage_check
+COMPONENT=api bash scripts/replit/python.sh manage.py aed_prepare_search
 # Replit applies managed PostgreSQL schema changes through the Publish flow.
 # Do not run Django migrations from this deployment process.
 
@@ -49,7 +50,7 @@ COMPONENT=celery bash scripts/replit/python.sh -m celery --app=mcod.celeryapp:ap
 worker_pid=$!
 
 sed "s|@STATIC_ROOT@|$PWD/statics|" scripts/replit/nginx.conf > /tmp/mcod-nginx-production.conf
-nginx -p "$PWD" -c /tmp/mcod-nginx-production.conf -g "daemon off;" &
+nginx -e stderr -p "$PWD" -c /tmp/mcod-nginx-production.conf -g "daemon off;" &
 nginx_pid=$!
 
 wait -n "$admin_pid" "$api_pid" "$worker_pid" "$nginx_pid" "$services_pid"

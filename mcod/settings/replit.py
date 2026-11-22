@@ -60,6 +60,7 @@ SILENCED_SYSTEM_CHECKS = ["axes.W002"]
 MIDDLEWARE = [m for m in MIDDLEWARE if m != "axes.middleware.AxesMiddleware"]  # noqa: F405
 MIDDLEWARE.insert(0, "mcod.settings.replit.PreviewCookiesMiddleware")
 USE_RDF_DB = False
+HEALTH_CHECK = False
 DISCOURSE_FORUM_ENABLED = False
 UNLEASH_ENABLED = False
 ELASTICSEARCH_DSL_INDEX_SETTINGS = {"number_of_shards": 1, "number_of_replicas": 0}

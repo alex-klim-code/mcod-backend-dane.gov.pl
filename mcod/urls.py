@@ -1,11 +1,11 @@
-from django.conf import settings
 from django.conf.urls import include
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.urls import path
+from django.urls import path, re_path
 from django.views.generic.base import TemplateView
 
 from mcod.core.admin_metrics_view import prometheus_metrics_view
+from mcod.aed_integration.storage_views import aed_resource_media_view
 from mcod.datasets.views import ConditionLabelsAdminView, DatasetAutocompleteView
 from mcod.organizations.views import InstitutionTypeAdminView, OrganizationAutocompleteView
 from mcod.regions.views import RegionsAutocompleteView
@@ -44,11 +44,6 @@ urlpatterns = common_urlpatterns + [
 
 urlpatterns += staticfiles_urlpatterns()
 urlpatterns += dev_static_urlpatterns()
-if getattr(settings, "REPLIT_APP_STORAGE_ENABLED", False):
-    from django.urls import re_path
-
-    from mcod.aed_integration.storage_views import aed_resource_media_view
-
-    urlpatterns = [
-        re_path(r"^media/resources/(?P<path>.+)$", aed_resource_media_view),
-    ] + urlpatterns
+urlpatterns = [
+    re_path(r"^media/resources/(?P<path>.+)$", aed_resource_media_view),
+] + urlpatterns

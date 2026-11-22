@@ -3,7 +3,7 @@
 ## Scope
 
 The existing Python/Django project and its `Pipfile.lock` are preserved. The
-default preview runs the **Django administration component**, not the separate
+default preview runs the **Django administration component** and **Falcon API**, not the separate
 public-facing dane.gov.pl frontend (which is not included in this repository).
 This is a **development environment only**, not a production deployment.
 
@@ -14,7 +14,9 @@ Click **Run** to start the `Project` workflow. It starts:
 - `Supporting services`: local Redis, RabbitMQ, and Elasticsearch 6.8.23, with
   the upstream Polish language resources and `analysis-stempel` / `analysis-icu`
   plugins. These services are private; only the web app is exposed.
-- `Django admin`: the existing admin application on `0.0.0.0:5000`.
+- `Django admin`: Nginx on `0.0.0.0:5000`, routing `/api/` to Falcon on
+  `127.0.0.1:8000` and the admin to Django on `127.0.0.1:8001`; also runs
+  one Celery worker.
 
 The preview redirects to `/login/`. No administrator account or default password
 has been created. Create your own account in the Replit Shell, where the password
@@ -68,26 +70,36 @@ It was **not** run here; no sample users or datasets were imported.
   RDF service are disabled in this development configuration.
 - Cookies are HTTPS-only and configured for the proxied preview. Use Replit's
   HTTPS preview rather than a direct HTTP browser URL.
-- No Celery workers, scheduled jobs, separate Falcon API, or Wagtail CMS server
-  are started by the default workflow.
+- Falcon and a single Celery worker are started by the default workflow.
+  No Wagtail CMS server or scheduled beat worker is started.
 
-To run those existing components manually in a separate Shell:
+Do not start duplicate Falcon or Celery processes while the default workflow
+is running. The optional CMS can be started separately:
 
 ```sh
-# Falcon API (development only)
-COMPONENT=api bash scripts/replit/python.sh -m gunicorn --bind 0.0.0.0:8000 mcod.api:app
-
 # Wagtail CMS (development only)
 COMPONENT=cms bash scripts/replit/python.sh manage.py runserver 0.0.0.0:8002
-
-# Background tasks (only when you intend to process the queued jobs)
-COMPONENT=celery bash scripts/replit/python.sh -m celery --app=mcod.celeryapp:app worker --pool=solo --concurrency=1 --loglevel=INFO
 ```
 
-These optional components have not been verified end-to-end in this setup.
-Background jobs require their own workers; starting RabbitMQ alone does not
-process queued jobs. Search functionality needs indexes created using the
-upstream `search_index` management command.
+The workflow creates missing institution/dataset/resource search indexes
+non-destructively and populates them from existing records. Full asynchronous
+publication tests are documented separately in `docs/aed-integration/test-results.md`.
+
+## AED Puls integration
+
+See `docs/aed-integration/README.md` for the actual routes, the backend-only
+TypeScript client, administrator-managed institution mappings and publication
+sequence. AED Puls keeps its own users and roles; the adapter does not create
+or synchronize them.
+
+`AED_INTEGRATION_SECRET` belongs only in Replit Secrets. Without it the adapter
+returns 503. Configure a private default App Storage bucket before enabling
+`MCOD_APP_STORAGE_ENABLED=true`. Production startup requires that bucket and
+the shared secret; no silent local-only file storage is allowed.
+
+The prepared production scripts use `mcod.settings.production_replit` and
+Gunicorn rather than Django's development server. They do not run schema
+migrations against production; managed schema changes go through Publish.
 
 ## Limits and safety
 

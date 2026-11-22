@@ -8,6 +8,7 @@ from datetime import date
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
 from mcod.aed_integration.models import (
@@ -138,6 +139,8 @@ def create_dataset(mapping, payload):
         external_dataset_id=external_dataset_id,
     ).select_related("dataset").first()
     if existing:
+        if existing.dataset.organization_id != mapping.organization_id:
+            raise AEDDataError("The dataset owner no longer matches its mapping.", "dataset_out_of_scope")
         return existing, False
 
     assigned_dataset_id = payload.get("mcod_dataset_id")
@@ -153,6 +156,11 @@ def create_dataset(mapping, payload):
                     "The MCOD dataset does not exist or does not belong to this mapped institution.",
                     "dataset_out_of_scope",
                 )
+            if AEDDatasetMapping.objects.filter(dataset=dataset).exists():
+                raise AEDDataError(
+                    "This MCOD dataset already has an AED integration mapping.",
+                    "dataset_already_mapped",
+                )
         else:
             dataset = Dataset(
                 title=title,
@@ -160,7 +168,6 @@ def create_dataset(mapping, payload):
                 url=source_url,
                 license_chosen=license_id,
                 organization=mapping.organization,
-                category=mapping.default_category,
                 update_frequency="daily",
                 has_dynamic_data=False,
                 has_high_value_data=False,
@@ -193,6 +200,7 @@ def update_dataset(mapping, external_dataset_id, payload):
         dataset_mapping = AEDDatasetMapping.objects.select_related("dataset").get(
             organization_mapping=mapping,
             external_dataset_id=external_dataset_id,
+            dataset__organization_id=mapping.organization_id,
         )
     except AEDDatasetMapping.DoesNotExist:
         return None
@@ -227,6 +235,7 @@ def get_dataset_mapping(mapping, external_dataset_id):
         return AEDDatasetMapping.objects.select_related("dataset", "organization_mapping").get(
             organization_mapping=mapping,
             external_dataset_id=external_dataset_id,
+            dataset__organization_id=mapping.organization_id,
         )
     except AEDDatasetMapping.DoesNotExist:
         return None
@@ -242,7 +251,10 @@ def create_or_update_resource(mapping, external_dataset_id, upload, title, descr
         raise AEDDataError("title is required and must be at most 500 characters.", "invalid_title")
     if source_url and not source_url.startswith("https://"):
         raise AEDDataError("source_url must use HTTPS.", "invalid_source_url")
-    content = upload.file.read()
+    upload_stream = getattr(upload, "stream", None) or getattr(upload, "file", None)
+    if upload_stream is None:
+        raise AEDDataError("The upload stream is unavailable.", "invalid_file")
+    content = upload_stream.read(25 * 1024 * 1024 + 1)
     rows = validate_aed_file(filename, content, external_dataset_id)
     dataset_mapping = get_dataset_mapping(mapping, external_dataset_id)
     if not dataset_mapping:
@@ -294,7 +306,7 @@ def create_or_update_resource(mapping, external_dataset_id, upload, title, descr
             has_research_data=dataset.has_research_data,
         )
         try:
-            resource.full_clean()
+            resource.full_clean(exclude=("old_resource_type",))
         except ValidationError as exc:
             raise AEDDataError("The MCOD resource validation failed: {}".format(exc), "resource_validation")
         with transaction.atomic():
@@ -368,7 +380,7 @@ def publish_resource(mapping, resource_id):
         raise AEDDataError("MCOD file validation failed; the resource remains a draft.", "validation_failed")
     resource.status = Resource.STATUS.published
     try:
-        resource.full_clean()
+        resource.full_clean(exclude=("old_resource_type",))
     except ValidationError as exc:
         raise AEDDataError("The MCOD resource validation failed: {}".format(exc), "resource_validation")
     resource.save()
@@ -412,13 +424,15 @@ def collect_aggregate_rows():
     source_count = 0
     dataset_mappings = AEDDatasetMapping.objects.filter(
         dataset__status=Dataset.STATUS.published,
+        dataset__organization_id=F("organization_mapping__organization_id"),
+        dataset__organization__status="published",
         organization_mapping__enabled=True,
-    ).select_related("dataset", "organization_mapping__organization")
+    ).select_related("dataset", "organization_mapping__organization").order_by("pk")
     for dataset_mapping in dataset_mappings:
         sources = Resource.objects.filter(
             dataset_id=dataset_mapping.dataset_id,
             status=Resource.STATUS.published,
-        ).select_related("dataset").prefetch_related("files")
+        ).select_related("dataset").prefetch_related("files").order_by("pk")
         for resource in sources:
             main_file = resource.main_file
             if not main_file:
@@ -492,13 +506,14 @@ def _ensure_aggregate_dataset(state):
         raise AEDDataError("The aggregate owner institution must be published.", "aggregate_owner_not_published")
     _validate_mapping_defaults(owner)
     if state.dataset_id:
+        if state.dataset.organization_id != owner.organization_id:
+            raise AEDDataError("The aggregate dataset has another owner.", "aggregate_owner_mismatch")
         return state.dataset
 
     dataset = Dataset(
         title=DATASET_TITLE,
         notes=DATASET_NOTES,
         organization=owner.organization,
-        category=owner.default_category,
         license_chosen=state.license_chosen,
         update_frequency="daily",
         has_dynamic_data=False,
@@ -553,7 +568,7 @@ def _create_aggregate_resource(state, dataset, rows, fingerprint):
         has_high_value_data_from_ec_list=False,
         has_research_data=False,
     )
-    resource.full_clean()
+    resource.full_clean(exclude=("old_resource_type",))
     with transaction.atomic():
         resource.save()
         ResourceFile.objects.create(
@@ -590,6 +605,16 @@ def rebuild_aggregate_catalog():
     state.save(update_fields=("status", "last_error", "updated_at"))
     rows, fingerprint = collect_aggregate_rows()
     dataset = _ensure_aggregate_dataset(state)
+    if (
+        state.source_fingerprint == fingerprint
+        and state.published_resource_id
+        and state.published_resource.status == Resource.STATUS.published
+        and not state.pending_resource_id
+    ):
+        state.status = AEDAggregateState.STATUS_PUBLISHED
+        state.last_run_at = timezone.now()
+        state.save(update_fields=("status", "last_run_at", "updated_at"))
+        return state
     resource = _create_aggregate_resource(state, dataset, rows, fingerprint)
     try:
         check_all_resource_validations_status(resource)

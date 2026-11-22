@@ -79,5 +79,8 @@ class AEDIntegrationAuditAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
+    def has_view_permission(self, request, obj=None):
+        return super().has_view_permission(request, obj)
+
     def has_delete_permission(self, request, obj=None):
         return False

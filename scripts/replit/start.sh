@@ -24,7 +24,8 @@ for attempt in $(seq 1 90); do
   sleep 1
 done
 
-COMPONENT=admin bash scripts/replit/python.sh manage.py collectstatic --noinput
+COMPONENT=admin bash scripts/replit/python.sh manage.py collectstatic --noinput --verbosity 0
+COMPONENT=api bash scripts/replit/python.sh manage.py aed_prepare_search
 COMPONENT=admin bash scripts/replit/python.sh manage.py runserver 127.0.0.1:8001 --noreload &
 admin_pid=$!
 COMPONENT=api bash scripts/replit/python.sh -m gunicorn --workers 1 --bind 127.0.0.1:8000 mcod.api:app &
@@ -33,7 +34,7 @@ COMPONENT=celery bash scripts/replit/python.sh -m celery --app=mcod.celeryapp:ap
   --pool=solo --concurrency=1 --loglevel=INFO &
 worker_pid=$!
 sed "s|@STATIC_ROOT@|$PWD/statics|" scripts/replit/nginx.conf > /tmp/mcod-nginx.conf
-nginx -p "$PWD" -c /tmp/mcod-nginx.conf -g "daemon off;" &
+nginx -e stderr -p "$PWD" -c /tmp/mcod-nginx.conf -g "daemon off;" &
 nginx_pid=$!
 
 wait -n "$admin_pid" "$api_pid" "$worker_pid" "$nginx_pid"

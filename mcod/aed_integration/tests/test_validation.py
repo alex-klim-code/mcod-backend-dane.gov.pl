@@ -86,3 +86,9 @@ def test_duplicate_device_ids_inside_one_source_file_are_rejected():
         validate_aed_file("locations.csv", csv_bytes(rows), "city-aed")
 
     assert error.value.code == "duplicate_device_id"
+
+
+def test_malformed_xlsx_is_a_validation_error():
+    with pytest.raises(AEDDataError) as error:
+        validate_aed_file("locations.xlsx", b"not an Excel file", "city-aed")
+    assert error.value.code == "invalid_xlsx"

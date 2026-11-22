@@ -55,9 +55,10 @@ REPLIT_APP_STORAGE_ENABLED = (
 )
 
 USE_RDF_DB = False
+HEALTH_CHECK = False
 DISCOURSE_FORUM_ENABLED = False
 UNLEASH_ENABLED = False
 for logger in LOGGING["loggers"].values():  # noqa: F405
     logger["handlers"] = ["console"]
 LOGGING["handlers"] = {"console": LOGGING["handlers"]["console"]}  # noqa: F405
-LOGGING["root"] = {"handlers": ["console"], "level": "WARNING"}
+LOGGING["root"] = {"handlers": ["console"], "level": "WARNING"}  # noqa: F405

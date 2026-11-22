@@ -1,0 +1,338 @@
+openapi: 3.0.3
+info:
+  title: MCOD AED Puls integration
+  version: 1.0.0
+  description: |
+    Backend-only adapter. Uses existing MCOD models and validation.
+    202 means accepted for processing, not publication.
+    The shared service key authorizes all enabled administrator-managed mappings.
+    AED Puls must authorize its own users before calling this API.
+servers:
+  - url: /api
+security:
+  - integrationBearer: []
+paths:
+  /integrations/aed/v1/institutions:
+    get:
+      summary: List enabled institution mappings
+      responses:
+        '200':
+          description: Enabled administrator-managed mappings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        external_organization_id: {type: string}
+                        mcod_institution_id: {type: integer}
+                        name: {type: string}
+                        status: {type: string}
+                        mcod_api_url: {type: string}
+        '401': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+  /integrations/aed/v1/organizations/{org}/datasets:
+    parameters:
+      - {$ref: '#/components/parameters/Org'}
+    get:
+      summary: List mapped datasets for this institution
+      responses:
+        '200':
+          description: Mapped datasets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/DatasetStatus'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      summary: Create a dataset or assign an existing dataset owned by the mapped institution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DatasetInput'}
+      responses:
+        '201':
+          description: Created dataset mapping; new datasets are drafts
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DatasetStatus'}
+        '200':
+          description: The same external dataset was already mapped
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DatasetStatus'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /integrations/aed/v1/organizations/{org}/datasets/{dataset}:
+    parameters:
+      - {$ref: '#/components/parameters/Org'}
+      - {$ref: '#/components/parameters/Dataset'}
+    get:
+      summary: Read mapped dataset and its resources
+      responses:
+        '200':
+          description: Dataset and resources
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/DatasetStatus'}
+                  - type: object
+                    properties:
+                      title: {type: string}
+                      resources:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            resource_id: {type: integer}
+                            status: {type: string}
+                            metadata_url: {type: string, nullable: true}
+                            file_url: {type: string, nullable: true}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    patch:
+      summary: Update dataset metadata without changing ownership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: {type: string, maxLength: 300}
+                description: {type: string, minLength: 20}
+                source_url: {type: string, format: uri}
+                license: {type: string}
+      responses:
+        '200':
+          description: Updated dataset metadata
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DatasetStatus'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /integrations/aed/v1/organizations/{org}/datasets/{dataset}/publish:
+    parameters:
+      - {$ref: '#/components/parameters/Org'}
+      - {$ref: '#/components/parameters/Dataset'}
+    post:
+      summary: Publish the mapped dataset after MCOD metadata checks
+      responses:
+        '200':
+          description: Published dataset
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DatasetStatus'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /integrations/aed/v1/organizations/{org}/datasets/{dataset}/resources:
+    parameters:
+      - {$ref: '#/components/parameters/Org'}
+      - {$ref: '#/components/parameters/Dataset'}
+    post:
+      summary: Upload CSV/XLSX as a real draft MCOD resource
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: {$ref: '#/components/schemas/ResourceUpload'}
+      responses:
+        '202':
+          description: Draft accepted for MCOD background validation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/ResourceStatus'}
+                  - type: object
+                    properties:
+                      accepted_rows: {type: integer}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '413': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /integrations/aed/v1/organizations/{org}/resources/{resource}:
+    parameters:
+      - {$ref: '#/components/parameters/Org'}
+      - {$ref: '#/components/parameters/Resource'}
+    get:
+      summary: Read real validation and publication status
+      responses:
+        '200':
+          description: Resource status
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ResourceStatus'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    put:
+      summary: Replace file and metadata; return resource to draft for validation
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              allOf:
+                - {$ref: '#/components/schemas/ResourceUpload'}
+                - type: object
+                  required: [external_dataset_id]
+                  properties:
+                    external_dataset_id: {type: string}
+      responses:
+        '202':
+          description: Replacement accepted for validation; publish again when successful
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ResourceStatus'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '413': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /integrations/aed/v1/organizations/{org}/resources/{resource}/publish:
+    parameters:
+      - {$ref: '#/components/parameters/Org'}
+      - {$ref: '#/components/parameters/Resource'}
+    post:
+      summary: Publish only after MCOD validation succeeds
+      responses:
+        '200':
+          description: Published resource
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ResourceStatus'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /integrations/aed/v1/aggregate:
+    get:
+      summary: Read catalog status and last published MCOD resource
+      responses:
+        '200':
+          description: Actual catalog state; idle when not configured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, enum: [idle, queued, building, published, failed]}
+                  record_count: {type: integer}
+                  last_run_at: {type: string, format: date-time, nullable: true}
+                  last_error: {type: string, nullable: true}
+                  dataset_id: {type: integer, nullable: true}
+                  resource_id: {type: integer, nullable: true}
+                  metadata_url: {type: string, nullable: true}
+                  file_url: {type: string, nullable: true}
+        '401': {$ref: '#/components/responses/Error'}
+    post:
+      summary: Queue national catalog aggregation and MCOD publication
+      responses:
+        '202':
+          description: Task queued; inspect GET status until published or failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, enum: [queued]}
+                  task_id: {type: string}
+        '401': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+components:
+  securitySchemes:
+    integrationBearer:
+      type: http
+      scheme: bearer
+      description: AED_INTEGRATION_SECRET from Replit Secrets; backend only
+  parameters:
+    Org:
+      name: org
+      in: path
+      required: true
+      schema: {type: string, maxLength: 128}
+      description: Administrator-approved external organization mapping ID
+    Dataset:
+      name: dataset
+      in: path
+      required: true
+      schema: {type: string, maxLength: 128}
+      description: External source dataset ID, not the numeric MCOD dataset ID
+    Resource:
+      name: resource
+      in: path
+      required: true
+      schema: {type: integer}
+      description: Numeric MCOD resource ID
+  schemas:
+    DatasetInput:
+      type: object
+      required: [external_dataset_id, title, description, source_url, license]
+      properties:
+        external_dataset_id: {type: string, maxLength: 128}
+        title: {type: string, minLength: 1, maxLength: 300}
+        description: {type: string, minLength: 20}
+        source_url: {type: string, format: uri, description: HTTPS URL}
+        license:
+          type: string
+          enum: [CC0 1.0, CC BY 4.0, CC BY-SA 4.0, CC BY-NC 4.0, CC BY-NC-SA 4.0, CC BY-ND 4.0, CC BY-NC-ND 4.0]
+        mcod_dataset_id:
+          type: integer
+          description: Optional existing dataset; must belong to the mapped institution
+    DatasetStatus:
+      type: object
+      properties:
+        external_dataset_id: {type: string}
+        dataset_id: {type: integer}
+        status: {type: string}
+        metadata_url: {type: string}
+    ResourceUpload:
+      type: object
+      required: [title, file]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: CSV or XLSX; maximum 25 MiB and 50,000 AED rows
+        title: {type: string, minLength: 1, maxLength: 500}
+        description: {type: string}
+        source_url: {type: string, format: uri, description: Optional HTTPS metadata URL}
+    ResourceStatus:
+      type: object
+      properties:
+        resource_id: {type: integer}
+        dataset_id: {type: integer}
+        status: {type: string}
+        file_validation: {type: string}
+        data_validation: {type: string}
+        link_validation: {type: string}
+        metadata_url: {type: string, nullable: true}
+        file_url: {type: string, nullable: true}
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: {type: string}
+            message: {type: string}
+  responses:
+    Error:
+      description: Rejected request; inspect error.code and error.message
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}

@@ -6,7 +6,6 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, Http404
 from django.views.decorators.http import require_GET
-from werkzeug.utils import safe_join
 
 from mcod.resources.models import ResourceFile
 

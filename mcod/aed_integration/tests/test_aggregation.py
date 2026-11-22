@@ -125,8 +125,8 @@ def test_aggregate_publishes_latest_records_and_keeps_previous_resource(
     )
 
     try:
-        category_a = CategoryFactory.create()
-        category_b = CategoryFactory.create()
+        category_a = CategoryFactory.create(status="published")
+        category_b = CategoryFactory.create(status="published")
         tag_a = TagFactory.create()
         tag_b = TagFactory.create()
         organization_a = OrganizationFactory.create(
@@ -153,7 +153,7 @@ def test_aggregate_publishes_latest_records_and_keeps_previous_resource(
         ]
         source_a = _source_resource(dataset_a, "source-a.csv", rows_a)
         _source_resource(dataset_b, "source-b.csv", rows_b)
-        state = AEDAggregateState.objects.create(
+        AEDAggregateState.objects.create(
             owner_mapping=mapping_a,
             license_chosen=Dataset.LICENSE_CC0,
         )
@@ -177,6 +177,8 @@ def test_aggregate_publishes_latest_records_and_keeps_previous_resource(
         }
         assert near_duplicates == {"aed-002": "true", "aed-004": "true"}
         assert all(row["verification_status"] == "source_reported" for row in aggregate_rows)
+        unchanged = rebuild_aggregate_catalog()
+        assert unchanged.published_resource_id == first_resource_id
 
         rows_a[-1]["name"] = "Station 3 revised"
         rows_a[-1]["updated_at"] = "2026-11-21"

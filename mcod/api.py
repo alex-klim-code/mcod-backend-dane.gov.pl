@@ -119,12 +119,10 @@ def get_api_app(middleware: Optional[list] = None):
     app.add_routes(routes)
     app.add_sink(lambda req, resp: setattr(resp, "media", {"data": None}), "/ping")
     app.add_static_route(settings.STATIC_URL, settings.STATIC_ROOT)
-    if getattr(settings, "REPLIT_APP_STORAGE_ENABLED", False):
-        from mcod.aed_integration.storage_views import AEDMediaSink
+    from mcod.aed_integration.storage_views import AEDMediaSink
 
-        app.add_sink(AEDMediaSink(), settings.MEDIA_URL)
-    else:
-        app.add_static_route(settings.MEDIA_URL, settings.MEDIA_ROOT)
+    app.add_sink(AEDMediaSink(), settings.MEDIA_URL.rstrip("/") + "/resources/")
+    app.add_static_route(settings.MEDIA_URL, settings.MEDIA_ROOT)
     app.req_options.strip_url_path_trailing_slash = True
     app.req_options.media_handlers.update(extra_handlers)
     app.resp_options.media_handlers.update(extra_handlers)

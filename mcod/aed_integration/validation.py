@@ -2,6 +2,7 @@ import csv
 import io
 import math
 import os
+import zipfile
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -57,7 +58,13 @@ def _read_rows(filename, content):
         raise AEDDataError("The uploaded file exceeds the 25 MB limit.", "file_too_large")
 
     if extension == ".xlsx":
-        workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+        try:
+            with zipfile.ZipFile(io.BytesIO(content)) as archive:
+                if sum(item.file_size for item in archive.infolist()) > 100 * 1024 * 1024:
+                    raise AEDDataError("Expanded XLSX exceeds the 100 MB limit.", "file_too_large")
+            workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+        except (zipfile.BadZipFile, ValueError, KeyError, OSError):
+            raise AEDDataError("The uploaded XLSX file is invalid.", "invalid_xlsx")
         worksheet = workbook.active
         iterator = worksheet.iter_rows(values_only=True)
         headers = next(iterator, None)

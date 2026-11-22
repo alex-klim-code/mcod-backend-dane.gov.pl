@@ -334,6 +334,7 @@ routes = [
     ("/reports/brokenlinks/data", reports_views.BrokenLinksReportDataView()),
     ("/reports/brokenlinks/{extension}", reports_views.PublicBrokenLinksReportDownloadView()),
     # Restricted service-to-service AED Puls integration.
+    ("/integrations/aed/openapi.yaml", aed_views.AEDOpenAPIView()),
     ("/integrations/aed/v1/institutions", aed_views.AEDInstitutionsView()),
     (
         "/integrations/aed/v1/organizations/{external_organization_id}/datasets",

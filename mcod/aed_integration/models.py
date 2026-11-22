@@ -34,6 +34,15 @@ class AEDOrganizationMapping(models.Model):
     def __str__(self):
         return "{} → {}".format(self.external_organization_id, self.organization)
 
+    def clean(self):
+        if self.pk and self.datasets.exclude(
+            dataset__organization_id=self.organization_id
+        ).exists():
+            raise ValidationError(
+                "This mapping has datasets owned by another institution. "
+                "Create a new mapping instead of changing its owner."
+            )
+
 
 class AEDDatasetMapping(models.Model):
     organization_mapping = models.ForeignKey(
