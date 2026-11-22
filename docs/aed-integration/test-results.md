@@ -55,7 +55,7 @@ Sprawdzone przez HTTPS w aktualnym podglądzie Replit z portem `:5000`:
 | `/api/doc` | 200 |
 | `/api/spec/1.4` | 200 |
 | `/api/integrations/aed/openapi.yaml` | 200 |
-| `/api/integrations/aed/v1/institutions` | 503 — brak skonfigurowanego sekretu |
+| `/api/integrations/aed/v1/institutions` | 401 bez tokenu — sekret skonfigurowany, dostęp anonimowy odrzucony |
 
 Celery odpowiedział `pong` na `inspect ping`: jeden worker online.
 Stronę logowania sprawdzono wizualnie w świeżym Chromium. Style CSS działają.
@@ -66,8 +66,9 @@ W developerskiej bazie po testach pozostaje 0 mapowań AED, 0 zbiorów i 0 zasob
 
 - App Storage: SDK zainstalowane; sprawdzenie domyślnego zasobnika nie przeszło.
   Należy utworzyć zasobnik w Tools → App Storage i ponowić sprawdzenie.
-- Sekret integracji nie został jeszcze skonfigurowany. Adapter zwraca wtedy 503
-  zamiast przyjmować zapis bez autoryzacji.
+- Sekret integracji został zapisany przez bezpieczny formularz i wczytany po
+  restarcie. Żądanie bez tokenu otrzymało 401 zamiast wcześniejszego 503.
+  Nie ujawniano wartości sekretu.
 - Nie wykonano pełnego testu 3+2 z rzeczywistym workerem walidującym pliki
   i pobraniem przez publiczne API.
 - Nie potwierdzono widoku zalogowanego administratora dla testowych zasobów.
