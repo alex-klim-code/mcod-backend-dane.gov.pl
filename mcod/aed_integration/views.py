@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import falcon
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 
 from mcod.aed_integration.models import AEDAggregateState, AEDDatasetMapping, AEDOrganizationMapping
@@ -28,6 +29,12 @@ from mcod.resources.models import Resource
 logger = logging.getLogger("mcod")
 
 
+class AEDValidationHTTPError(falcon.HTTPUnprocessableEntity):
+    def __init__(self, error):
+        super().__init__(description=str(error), code=error.code)
+        self.field_errors = error.field_errors
+
+
 def authenticate_integration(request):
     expected = getattr(settings, "AED_INTEGRATION_SECRET", "")
     if not expected:
@@ -41,7 +48,11 @@ def authenticate_integration(request):
 
     authorization = request.get_header("Authorization") or ""
     scheme, _, supplied = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not supplied or not hmac.compare_digest(supplied, expected):
+    # compare_digest(str, str) raises TypeError for non-ASCII header values,
+    # turning an invalid bearer into HTTP 500. Compare bytes in constant time.
+    if scheme.lower() != "bearer" or not supplied or not hmac.compare_digest(
+        supplied.encode("utf-8"), expected.encode("utf-8")
+    ):
         raise falcon.HTTPUnauthorized(
             title="401 Unauthorized",
             description="A valid AED integration bearer token is required.",
@@ -57,6 +68,11 @@ def secure(handler):
         try:
             authenticate_integration(request)
             return handler(self, request, response, *args, **kwargs)
+        except PermissionDenied:
+            response.status = falcon.HTTP_403
+            response.media = {
+                "error": {"code": "integration_permission_denied", "message": "This organization lacks the approved permission."}
+            }
         except falcon.HTTPError as exc:
             response.status = exc.status
             response.media = {
@@ -65,6 +81,8 @@ def secure(handler):
                     "message": exc.description or exc.title,
                 }
             }
+            if getattr(exc, "field_errors", None):
+                response.media["error"]["fields"] = exc.field_errors
 
     return wrapped
 
@@ -105,6 +123,8 @@ def _mapping_or_404(external_organization_id):
 
 def _raise_data_error(exc, action, mapping=None, dataset=None, resource=None):
     write_audit(action, "rejected", mapping=mapping, dataset=dataset, resource=resource, code=exc.code)
+    if exc.field_errors:
+        raise AEDValidationHTTPError(exc)
     if exc.code in ("queue_unavailable", "public_api_url_missing"):
         raise falcon.HTTPServiceUnavailable(description=str(exc), code=exc.code)
     if exc.code == "validation_pending":
@@ -117,7 +137,9 @@ def _raise_data_error(exc, action, mapping=None, dataset=None, resource=None):
 class AEDInstitutionsView:
     @secure
     def on_get(self, request, response):
-        mappings = AEDOrganizationMapping.objects.filter(enabled=True).select_related("organization")
+        mappings = AEDOrganizationMapping.objects.filter(
+            enabled=True, organization__is_removed=False, organization__is_permanently_removed=False,
+        ).select_related("organization")
         response.media = {
             "data": [
                 {
@@ -188,6 +210,14 @@ class AEDDatasetView:
             "external_dataset_id": dataset_mapping.external_dataset_id,
             "dataset_id": dataset.pk,
             "title": dataset.title,
+            "description": dataset.notes,
+            "source_url": dataset.url,
+            "license": str(dict(dataset.LICENSES).get(dataset.license_chosen, "")),
+            "update_frequency": dataset.update_frequency,
+            "has_dynamic_data": dataset.has_dynamic_data,
+            "has_high_value_data": dataset.has_high_value_data,
+            "has_high_value_data_from_ec_list": dataset.has_high_value_data_from_ec_list,
+            "has_research_data": dataset.has_research_data,
             "status": dataset.status,
             "resources": [
                 {

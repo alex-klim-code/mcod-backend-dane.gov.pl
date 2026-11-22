@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 import math
 import os
 import zipfile
@@ -43,19 +44,59 @@ ALLOWED_VERIFICATION = {"unverified", "source_reported"}
 
 
 class AEDDataError(ValueError):
-    def __init__(self, message, code="invalid_aed_data"):
+    def __init__(self, message, code="invalid_aed_data", field_errors=None):
         super().__init__(message)
         self.code = code
+        self.field_errors = field_errors
 
 
 def _read_rows(filename, content):
     extension = os.path.splitext(filename.lower())[1]
-    if extension not in (".csv", ".xlsx"):
-        raise AEDDataError("Only CSV and XLSX uploads are supported.", "unsupported_file")
+    if extension not in (".csv", ".xlsx", ".geojson", ".json"):
+        raise AEDDataError("Only CSV, XLSX and GeoJSON FeatureCollection uploads are supported.", "unsupported_file")
     if not content:
         raise AEDDataError("The uploaded file is empty.", "empty_file")
     if len(content) > MAX_UPLOAD_BYTES:
         raise AEDDataError("The uploaded file exceeds the 25 MB limit.", "file_too_large")
+
+    if extension in (".geojson", ".json"):
+        try:
+            document = json.loads(content.decode("utf-8-sig"))
+        except (ValueError, UnicodeDecodeError):
+            raise AEDDataError("Invalid GeoJSON document.", "invalid_geojson")
+        if not isinstance(document, dict) or document.get("type") != "FeatureCollection":
+            raise AEDDataError("GeoJSON must be a FeatureCollection.", "invalid_geojson")
+        if document.get("crs"):
+            raise AEDDataError("Supply RFC 7946 WGS84 coordinates without a custom CRS.", "unsupported_crs")
+        features = document.get("features")
+        if not isinstance(features, list):
+            raise AEDDataError("GeoJSON features must be an array.", "invalid_geojson")
+        if len(features) > MAX_ROWS_PER_RESOURCE:
+            raise AEDDataError("The file exceeds the 50,000 row limit.", "too_many_rows")
+        rows = []
+        for feature in features:
+            if not isinstance(feature, dict) or feature.get("type") != "Feature":
+                raise AEDDataError("Each GeoJSON member must be a Feature.", "invalid_geojson")
+            geometry, properties = feature.get("geometry"), feature.get("properties")
+            if not isinstance(geometry, dict) or geometry.get("type") != "Point" or not isinstance(properties, dict):
+                raise AEDDataError("AED features require Point geometry and properties.", "invalid_geojson")
+            coordinates = geometry.get("coordinates")
+            if not isinstance(coordinates, list) or len(coordinates) not in (2, 3):
+                raise AEDDataError("Point coordinates must be [longitude, latitude].", "invalid_coordinates")
+            if any(type(value) not in (int, float) for value in coordinates):
+                raise AEDDataError("Point coordinates must be numbers.", "invalid_coordinates")
+            row = dict(properties)
+            for name, value in zip(("longitude", "latitude"), coordinates[:2]):
+                if name in row:
+                    try:
+                        matches = float(row[name]) == value
+                    except (TypeError, ValueError):
+                        matches = False
+                    if not matches:
+                        raise AEDDataError("Properties conflict with Point coordinates.", "coordinate_conflict")
+                row[name] = value
+            rows.append(row)
+        return rows
 
     if extension == ".xlsx":
         try:

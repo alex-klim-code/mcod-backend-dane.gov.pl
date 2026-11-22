@@ -135,7 +135,11 @@ def test_real_aed_publication_and_aggregate(monkeypatch, admin_client):
             assert login.status_code in (200, 201), login.status_code
             assert int(login.json["data"]["id"]) == institution_user.pk
             assert institution_user.organizations.filter(pk=mapping_a.organization_id).exists()
-            AEDAggregateState.objects.create(owner_mapping=mapping_a, license_chosen=Dataset.LICENSE_CC0)
+            AEDAggregateState.objects.create(
+                owner_mapping=mapping_a, license_chosen=Dataset.LICENSE_CC0,
+                update_frequency="daily", has_dynamic_data=False, has_high_value_data=False,
+                has_high_value_data_from_ec_list=False, has_research_data=False,
+            )
             source_rows = {}
             resources = {}
             with start_worker(
@@ -150,6 +154,8 @@ def test_real_aed_publication_and_aggregate(monkeypatch, admin_client):
                         "title": "Isolated AED source " + org,
                         "description": "Isolated E2E source records for actual MCOD validation.",
                         "source_url": "https://example.org/" + dataset_id,
+                        "update_frequency": "daily", "has_dynamic_data": False, "has_high_value_data": False,
+                        "has_high_value_data_from_ec_list": False, "has_research_data": False,
                         "license": Dataset.LICENSE_CODE_TO_NAME[Dataset.LICENSE_CC0],
                     })
                     request_ok("post", prefix + "/datasets/" + dataset_id + "/publish")

@@ -156,6 +156,8 @@ def test_aggregate_publishes_latest_records_and_keeps_previous_resource(
         AEDAggregateState.objects.create(
             owner_mapping=mapping_a,
             license_chosen=Dataset.LICENSE_CC0,
+            update_frequency="daily", has_dynamic_data=False, has_high_value_data=False,
+            has_high_value_data_from_ec_list=False, has_research_data=False,
         )
 
         first_run = rebuild_aggregate_catalog()

@@ -1,5 +1,7 @@
 from mcod.academy import views as academy_views
 from mcod.aed_integration import views as aed_views
+from mcod.aed_integration import organization_views as aed_organization_views
+from mcod.aed_integration.file_views import AEDResourceFileView
 from mcod.core.api.utils import views as core_views
 from mcod.core.api.views import MetricsResource
 from mcod.datasets import views as dataset_views
@@ -336,6 +338,25 @@ routes = [
     # Restricted service-to-service AED Puls integration.
     ("/integrations/aed/openapi.yaml", aed_views.AEDOpenAPIView()),
     ("/integrations/aed/v1/institutions", aed_views.AEDInstitutionsView()),
+    ("/integrations/aed/v1/organization-mappings", aed_views.AEDInstitutionsView()),
+    (
+        "/integrations/aed/v1/organizations/{external_organization_id}/resources/{resource_id:int}/file",
+        AEDResourceFileView(),
+    ),
+    (
+        "/integrations/aed/v1/organizations/{external_organization_id}/resources/{resource_id:int}/files/{file_id:int}",
+        AEDResourceFileView(),
+    ),
+    ("/integrations/aed/v1/schemas", aed_organization_views.AEDSchemasView()),
+    ("/integrations/aed/v1/organization-requests", aed_organization_views.AEDOrganizationRequestsView()),
+    (
+        "/integrations/aed/v1/organization-requests/{external_organization_id}",
+        aed_organization_views.AEDOrganizationRequestView(),
+    ),
+    (
+        "/integrations/aed/v1/organizations/{external_organization_id}/institution",
+        aed_organization_views.AEDOrganizationInstitutionView(),
+    ),
     (
         "/integrations/aed/v1/organizations/{external_organization_id}/datasets",
         aed_views.AEDDatasetsView(),

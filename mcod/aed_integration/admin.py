@@ -1,10 +1,12 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 
 from mcod.aed_integration.models import (
     AEDAggregateState,
     AEDDatasetMapping,
     AEDIntegrationAudit,
     AEDOrganizationMapping,
+    AEDOrganizationRequest,
 )
 
 
@@ -20,6 +22,8 @@ class AEDOrganizationMappingAdmin(admin.ModelAdmin):
         "default_category",
         "default_tags",
         "enabled",
+        "can_manage_institution",
+        "can_adopt_datasets",
     )
 
 
@@ -32,6 +36,38 @@ class AEDDatasetMappingAdmin(admin.ModelAdmin):
         "dataset__title",
     )
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(AEDOrganizationRequest)
+class AEDOrganizationRequestAdmin(admin.ModelAdmin):
+    list_display = ("external_organization_id", "organization_name", "request_type", "organization", "status")
+    list_filter = ("status", "request_type")
+    search_fields = ("external_organization_id", "organization_name")
+    readonly_fields = ("status", "reviewed_by", "reviewed_at", "created_at", "updated_at")
+    filter_horizontal = ("default_tags",)
+    actions = ("approve_requests", "reject_requests")
+
+    def _review(self, request, queryset, approve):
+        from mcod.aed_integration.institutions import review_request
+        for item in queryset:
+            try:
+                review_request(item.pk, approve, request.user)
+            except ValidationError as exc:
+                self.message_user(request, str(exc), level="error")
+            else:
+                self.message_user(request, "{}: {}".format(item.external_organization_id, "approved" if approve else "rejected"))
+
+    def approve_requests(self, request, queryset):
+        self._review(request, queryset, True)
+
+    approve_requests.short_description = "Approve selected organization requests"
+    approve_requests.allowed_permissions = ("change",)
+
+    def reject_requests(self, request, queryset):
+        self._review(request, queryset, False)
+
+    reject_requests.short_description = "Reject selected organization requests"
+    reject_requests.allowed_permissions = ("change",)
 
 
 @admin.register(AEDAggregateState)

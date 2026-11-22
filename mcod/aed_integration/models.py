@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.utils import timezone
 
@@ -23,6 +24,8 @@ class AEDOrganizationMapping(models.Model):
         related_name="aed_integration_mappings",
     )
     enabled = models.BooleanField(default=True)
+    can_manage_institution = models.BooleanField(default=False)
+    can_adopt_datasets = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -74,6 +77,46 @@ class AEDDatasetMapping(models.Model):
         return "{} → {}".format(self.external_dataset_id, self.dataset_id)
 
 
+class AEDOrganizationRequest(models.Model):
+    """Approval belongs to MCOD staff, never to the shared bearer itself."""
+
+    external_organization_id = models.CharField(max_length=128, unique=True)
+    organization_name = models.CharField(max_length=200)
+    request_type = models.CharField(max_length=8, choices=(("link", "Link"), ("create", "Create")))
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.PROTECT, null=True, blank=True,
+        related_name="aed_link_requests",
+    )
+    status = models.CharField(
+        max_length=10, default="pending",
+        choices=(("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected")),
+    )
+    can_manage_institution = models.BooleanField(default=False)
+    can_adopt_datasets = models.BooleanField(default=False)
+    default_category = models.ForeignKey(
+        "categories.Category", on_delete=models.PROTECT, null=True, blank=True,
+        related_name="aed_link_requests",
+    )
+    default_tags = models.ManyToManyField("tags.Tag", blank=True, related_name="aed_link_requests")
+    review_note = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        "users.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="aed_reviews", editable=False,
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        if self.request_type == "link" and not self.organization_id:
+            raise ValidationError({"organization": "An existing institution is required for a link request."})
+        if self.request_type == "create" and self.organization_id:
+            raise ValidationError({"organization": "A creation request cannot select an existing institution."})
+
+    def __str__(self):
+        return "{} ({})".format(self.external_organization_id, self.status)
+
+
 class AEDAggregateState(models.Model):
     STATUS_IDLE = "idle"
     STATUS_QUEUED = "queued"
@@ -111,6 +154,11 @@ class AEDAggregateState(models.Model):
             (7, "CC BY-NC-ND 4.0"),
         ),
     )
+    update_frequency = models.CharField(max_length=50, blank=True)
+    has_dynamic_data = models.NullBooleanField()
+    has_high_value_data = models.NullBooleanField()
+    has_high_value_data_from_ec_list = models.NullBooleanField()
+    has_research_data = models.NullBooleanField()
     dataset = models.OneToOneField(
         "datasets.Dataset",
         on_delete=models.PROTECT,
@@ -154,6 +202,7 @@ class AEDIntegrationAudit(models.Model):
     action = models.CharField(max_length=64)
     outcome = models.CharField(max_length=24)
     code = models.CharField(max_length=64, blank=True)
+    details = JSONField(default=dict, blank=True)
     external_organization_id = models.CharField(max_length=128, blank=True)
     external_dataset_id = models.CharField(max_length=128, blank=True)
     dataset = models.ForeignKey(

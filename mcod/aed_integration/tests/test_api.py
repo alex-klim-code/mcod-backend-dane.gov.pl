@@ -109,6 +109,11 @@ def test_dataset_api_scopes_assignments_to_mapped_institution():
         "description": "Published AED source records maintained by organization A.",
         "source_url": "https://example.org/aed/source-a",
         "license": Dataset.LICENSE_CODE_TO_NAME[Dataset.LICENSE_CC0],
+        "update_frequency": "daily",
+        "has_dynamic_data": False,
+        "has_high_value_data": False,
+        "has_high_value_data_from_ec_list": False,
+        "has_research_data": False,
     }
 
     with override_settings(AED_INTEGRATION_SECRET=SECRET, AED_REQUIRE_HTTPS=True):

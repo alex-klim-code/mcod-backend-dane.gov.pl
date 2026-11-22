@@ -3,7 +3,7 @@ import logging
 import re
 import unicodedata
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -19,7 +19,9 @@ from mcod.aed_integration.models import (
     AEDIntegrationAudit,
     AEDOrganizationMapping,
 )
-from mcod.aed_integration.validation import AEDDataError, validate_aed_file, write_csv
+from mcod.aed_integration.validation import (
+    AEDDataError, OPTIONAL_COLUMNS, REQUIRED_COLUMNS, validate_aed_file, write_csv,
+)
 from mcod.datasets.models import Dataset
 from mcod.resources.dga_utils import (
     FailedValidationException,
@@ -64,8 +66,8 @@ AGGREGATE_COLUMNS = (
 )
 
 
-def write_audit(action, outcome, mapping=None, dataset=None, resource=None, code=""):
-    external_org_id = mapping.external_organization_id if mapping else ""
+def write_audit(action, outcome, mapping=None, dataset=None, resource=None, code="", details=None, external_organization_id=""):
+    external_org_id = mapping.external_organization_id if mapping else external_organization_id
     external_dataset_id = ""
     if dataset is not None:
         external_mapping = getattr(dataset, "aed_integration_mapping", None)
@@ -75,6 +77,7 @@ def write_audit(action, outcome, mapping=None, dataset=None, resource=None, code
         action=action,
         outcome=outcome,
         code=code[:64],
+        details=details or {},
         external_organization_id=external_org_id,
         external_dataset_id=external_dataset_id,
         dataset_id=dataset.pk if dataset else None,
@@ -95,7 +98,10 @@ def get_mapping(external_organization_id):
     try:
         return AEDOrganizationMapping.objects.select_related(
             "organization", "default_category"
-        ).get(external_organization_id=external_organization_id, enabled=True)
+        ).get(
+            external_organization_id=external_organization_id, enabled=True,
+            organization__is_removed=False, organization__is_permanently_removed=False,
+        )
     except AEDOrganizationMapping.DoesNotExist:
         return None
 
@@ -121,6 +127,8 @@ def _validate_mapping_defaults(mapping):
 
 
 def create_dataset(mapping, payload):
+    from mcod.aed_integration.contracts import dataset_options
+    from django.core.exceptions import PermissionDenied
     external_dataset_id = str(payload.get("external_dataset_id", "")).strip()
     title = str(payload.get("title", "")).strip()
     notes = str(payload.get("description", "")).strip()
@@ -164,19 +172,18 @@ def create_dataset(mapping, payload):
                     "This MCOD dataset already has an AED integration mapping.",
                     "dataset_already_mapped",
                 )
+            if not mapping.can_adopt_datasets:
+                raise PermissionDenied
         else:
+            options = dataset_options(payload, mapping.organization)
             dataset = Dataset(
                 title=title,
                 notes=notes,
                 url=source_url,
                 license_chosen=license_id,
                 organization=mapping.organization,
-                update_frequency="daily",
-                has_dynamic_data=False,
-                has_high_value_data=False,
-                has_high_value_data_from_ec_list=False,
-                has_research_data=False,
                 status=Dataset.STATUS.draft,
+                **options
             )
             try:
                 dataset.full_clean()
@@ -199,6 +206,7 @@ def create_dataset(mapping, payload):
 
 
 def update_dataset(mapping, external_dataset_id, payload):
+    from mcod.aed_integration.contracts import dataset_options
     try:
         dataset_mapping = AEDDatasetMapping.objects.select_related("dataset").get(
             organization_mapping=mapping,
@@ -225,6 +233,8 @@ def update_dataset(mapping, external_dataset_id, payload):
         dataset.url = source_url
     if "license" in payload:
         dataset.license_chosen = _license_id(str(payload["license"]).strip())
+    for name, value in dataset_options(payload, mapping.organization, partial=True, instance=dataset).items():
+        setattr(dataset, name, value)
     try:
         dataset.full_clean()
     except ValidationError as exc:
@@ -239,6 +249,8 @@ def get_dataset_mapping(mapping, external_dataset_id):
             organization_mapping=mapping,
             external_dataset_id=external_dataset_id,
             dataset__organization_id=mapping.organization_id,
+        dataset__is_removed=False,
+        dataset__is_permanently_removed=False,
         )
     except AEDDatasetMapping.DoesNotExist:
         return None
@@ -277,7 +289,7 @@ def queue_file_validation(resource_file):
 def create_or_update_resource(mapping, external_dataset_id, upload, title, description, source_url, resource_id=None):
     validate_public_api_url()
     if not upload or not getattr(upload, "filename", None):
-        raise AEDDataError("A CSV or XLSX file is required.", "missing_file")
+        raise AEDDataError("A CSV, XLSX or GeoJSON file is required.", "missing_file")
     filename = upload.filename.split("/")[-1].split("\\")[-1]
     if not filename or len(filename) > 180:
         raise AEDDataError("The uploaded filename is invalid.", "invalid_filename")
@@ -301,62 +313,57 @@ def create_or_update_resource(mapping, external_dataset_id, upload, title, descr
             "source_license_mismatch",
         )
 
-    if resource_id is not None:
-        try:
-            resource = Resource.objects.select_related("dataset").get(
-                pk=resource_id,
-                dataset__organization_id=mapping.organization_id,
-                dataset__aed_integration_mapping=dataset_mapping,
+    original_geojson = filename.lower().endswith((".geojson", ".json"))
+    main_name = filename.rsplit(".", 1)[0] + ".csv" if original_geojson else filename
+    main_content = write_csv(rows, REQUIRED_COLUMNS + OPTIONAL_COLUMNS) if original_geojson else content
+    with transaction.atomic():
+        if resource_id is not None:
+            try:
+                resource = Resource.objects.select_for_update().select_related("dataset").get(
+                    pk=resource_id,
+                    dataset__organization_id=mapping.organization_id,
+                    dataset__aed_integration_mapping=dataset_mapping,
+                )
+            except Resource.DoesNotExist:
+                return None, 0
+        else:
+            resource = Resource(
+                dataset=dataset,
+                has_dynamic_data=dataset.has_dynamic_data,
+                has_high_value_data=dataset.has_high_value_data,
+                has_high_value_data_from_ec_list=dataset.has_high_value_data_from_ec_list,
+                has_research_data=dataset.has_research_data,
             )
-        except Resource.DoesNotExist:
-            return None, 0
-        resource.status = Resource.STATUS.draft
         resource.title = title
         resource.description = description or ""
-        resource.data_date = date.today()
-        resource.save()
-        resource_file = ResourceFile.objects.filter(resource=resource, is_main=True).first()
-        uploaded_file = SimpleUploadedFile(
-            filename,
-            content,
-            content_type=upload.content_type or "application/octet-stream",
-        )
-        if resource_file:
-            resource_file.file = uploaded_file
-            resource_file.save()
-        else:
-            resource_file = ResourceFile.objects.create(resource=resource, is_main=True, file=uploaded_file)
-        queue_file_validation(resource_file)
-        action = "resource_updated"
-    else:
-        resource = Resource(
-            dataset=dataset,
-            title=title,
-            description=description or "",
-            data_date=date.today(),
-            status=Resource.STATUS.draft,
-            has_dynamic_data=dataset.has_dynamic_data,
-            has_high_value_data=dataset.has_high_value_data,
-            has_high_value_data_from_ec_list=dataset.has_high_value_data_from_ec_list,
-            has_research_data=dataset.has_research_data,
-        )
+        # This is the source's declared data date, not an invented upload date.
+        resource.data_date = max(datetime.fromisoformat(row["updated_at"]).date() for row in rows)
+        resource.status = Resource.STATUS.draft
         try:
             resource.full_clean(exclude=("old_resource_type",))
         except ValidationError as exc:
             raise AEDDataError("The MCOD resource validation failed: {}".format(exc), "resource_validation")
-        with transaction.atomic():
-            resource.save()
-            resource_file = ResourceFile.objects.create(
-                resource=resource,
-                is_main=True,
+        resource.save()
+        resource_file = ResourceFile.objects.filter(resource=resource, is_main=True).first()
+        if resource_file is None:
+            resource_file = ResourceFile(resource=resource, is_main=True)
+        resource_file.file = SimpleUploadedFile(
+            main_name, main_content,
+            content_type="text/csv" if original_geojson else upload.content_type or "application/octet-stream",
+        )
+        resource_file.save()
+        if original_geojson:
+            # MCOD's native tabular validation does not process GeoJSON. Preserve
+            # the original as a native attachment and validate a truthful CSV
+            # projection through the UNCHANGED MCOD file/data/link pipeline.
+            ResourceFile.objects.create(
+                resource=resource, is_main=False,
                 file=SimpleUploadedFile(
-                    filename,
-                    content,
-                    content_type=upload.content_type or "application/octet-stream",
+                    filename, content, content_type="application/geo+json",
                 ),
             )
-            queue_file_validation(resource_file)
-        action = "resource_created"
+        queue_file_validation(resource_file)
+    action = "resource_updated" if resource_id is not None else "resource_created"
     write_audit(action, "accepted", mapping=mapping, dataset=dataset, resource=resource)
     resource.refresh_from_db()
     return resource, len(rows)
@@ -365,6 +372,9 @@ def create_or_update_resource(mapping, external_dataset_id, upload, title, descr
 def resource_status(resource):
     return {
         "resource_id": resource.pk,
+        "title": resource.title,
+        "description": resource.description,
+        "data_date": resource.data_date.isoformat() if resource.data_date else None,
         "dataset_id": resource.dataset_id,
         "status": resource.status,
         "file_validation": resource.file_tasks_last_status or "PENDING",
@@ -372,6 +382,11 @@ def resource_status(resource):
         "link_validation": resource.link_tasks_last_status or "PENDING",
         "file_url": "/api/resources/{}/file".format(resource.pk) if resource.is_published else None,
         "metadata_url": "/api/resources/{}".format(resource.pk) if resource.is_published else None,
+        "files": [
+            {"file_id": item.pk, "name": item.file.name.rsplit("/", 1)[-1], "is_main": item.is_main,
+             "format": item.format}
+            for item in resource.files.all()
+        ],
     }
 
 
@@ -534,6 +549,7 @@ def collect_aggregate_rows():
 
 
 def _ensure_aggregate_dataset(state):
+    from mcod.aed_integration.contracts import DATASET_FLAGS, dataset_options
     owner = state.owner_mapping
     if not owner or not owner.enabled:
         raise AEDDataError("Configure an enabled MCOD institution mapping as the aggregate owner.", "aggregate_owner_missing")
@@ -547,17 +563,17 @@ def _ensure_aggregate_dataset(state):
             raise AEDDataError("The aggregate dataset has another owner.", "aggregate_owner_mismatch")
         return state.dataset
 
+    options = dataset_options(
+        dict({name: getattr(state, name) for name in DATASET_FLAGS}, update_frequency=state.update_frequency),
+        owner.organization,
+    )
     dataset = Dataset(
         title=DATASET_TITLE,
         notes=DATASET_NOTES,
         organization=owner.organization,
         license_chosen=state.license_chosen,
-        update_frequency="daily",
-        has_dynamic_data=False,
-        has_high_value_data=False,
-        has_high_value_data_from_ec_list=False,
-        has_research_data=False,
         status=Dataset.STATUS.draft,
+        **options
     )
     dataset.full_clean()
     dataset.save()

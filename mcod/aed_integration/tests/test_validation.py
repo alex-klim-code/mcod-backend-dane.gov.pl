@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 
 import pytest
 
@@ -92,3 +93,49 @@ def test_malformed_xlsx_is_a_validation_error():
     with pytest.raises(AEDDataError) as error:
         validate_aed_file("locations.xlsx", b"not an Excel file", "city-aed")
     assert error.value.code == "invalid_xlsx"
+
+
+def geojson_bytes(row=None, geometry=None):
+    properties = dict(row or make_csv_row())
+    properties.pop("latitude", None)
+    properties.pop("longitude", None)
+    return json.dumps({
+        "type": "FeatureCollection", "features": [{
+            "type": "Feature",
+            "geometry": geometry or {"type": "Point", "coordinates": [21.0122, 52.2297]},
+            "properties": properties,
+        }],
+    }).encode()
+
+
+def test_geojson_uses_real_point_coordinates_without_inventing_properties():
+    parsed = validate_aed_file("aed.geojson", geojson_bytes(), "city-aed")
+    assert parsed[0]["longitude"] == "21.01220000"
+    assert parsed[0]["latitude"] == "52.22970000"
+    assert parsed[0]["verification_status"] == "source_reported"
+
+
+@pytest.mark.parametrize("geometry", [
+    {"type": "LineString", "coordinates": [[21, 52], [22, 53]]},
+    {"type": "Point", "coordinates": [True, 52]},
+    {"type": "Point", "coordinates": [21, 152]},
+])
+def test_geojson_rejects_non_point_or_invalid_coordinates(geometry):
+    with pytest.raises(AEDDataError):
+        validate_aed_file("aed.geojson", geojson_bytes(geometry=geometry), "city-aed")
+
+
+def test_geojson_requires_real_licensing_and_availability():
+    row = make_csv_row()
+    row.pop("availability")
+    with pytest.raises(AEDDataError) as error:
+        validate_aed_file("aed.geojson", geojson_bytes(row=row), "city-aed")
+    assert error.value.code == "missing_columns"
+
+
+def test_geojson_rejects_conflicting_property_coordinates():
+    document = json.loads(geojson_bytes())
+    document["features"][0]["properties"]["latitude"] = 10
+    with pytest.raises(AEDDataError) as error:
+        validate_aed_file("aed.geojson", json.dumps(document).encode(), "city-aed")
+    assert error.value.code == "coordinate_conflict"
