@@ -2,7 +2,7 @@
 
 Status: **blocked**
 
-Data UTC: 2026-11-22T01:44:49.591026+00:00
+Data UTC: 2026-11-22T01:48:08.777011+00:00
 
 ## Wyniki
 ```json
@@ -37,6 +37,57 @@ Brak rozmiaru nie oznacza pliku o zerowej wielkości.
 ```json
 {
   "import_api_tests": "not_run_no_import",
+  "original_validation": {
+    "fax": {
+      "null": true,
+      "blank": false,
+      "choices": [],
+      "full_clean_field_errors": {
+        "null": [
+          "To pole nie może być puste."
+        ],
+        "empty_string": [
+          "To pole nie może być puste."
+        ]
+      }
+    },
+    "abbreviation": {
+      "null": true,
+      "blank": false,
+      "choices": [],
+      "full_clean_field_errors": {
+        "null": [
+          "To pole nie może być puste."
+        ],
+        "empty_string": [
+          "To pole nie może być puste."
+        ]
+      }
+    },
+    "old_resource_type": {
+      "null": true,
+      "blank": false,
+      "choices": [],
+      "full_clean_field_errors": {
+        "null": [
+          "To pole nie może być puste."
+        ],
+        "empty_string": [
+          "To pole nie może być puste."
+        ]
+      }
+    },
+    "source_institution": {
+      "id": "229",
+      "fax": null,
+      "abbreviation": null
+    },
+    "original_form": {
+      "fax_required": false,
+      "abbreviation_required": false,
+      "mechanism": "Django ModelForm._get_validation_exclusions excludes empty optional form fields before calling instance.full_clean(exclude=...). This differs from unrestricted model.full_clean()."
+    }
+  },
   "code_unchanged": true,
   "schema_unchanged": true,
   "before": {
@@ -68,7 +119,7 @@ Brak rozmiaru nie oznacza pliku o zerowej wielkości.
 ```
 
 ## Zakres i ograniczenia
-Five requested keyword searches with ID-cursor pagination, then AED/defibrylat matching in public metadata. This does not prove detection of every unlabelled or otherwise unsearchable AED dataset.
+Four explicitly requested source IDs refreshed, with ID-cursor resource pagination.
 
 Skrypt zatrzymał się na oryginalnych walidatorach. Etap zapisu pozostaje zablokowany.
 Nie wykonano pilota, testu idempotencji ani testu API importowanych zasobów.

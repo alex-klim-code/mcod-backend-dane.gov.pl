@@ -17,6 +17,7 @@ from scripts.aed_import_http import Client, ImportBlocked
 API = "https://api.dane.gov.pl"
 TERMS = ["AED", "defibrylator", "defibrylatory",
          "automatyczny defibrylator zewnętrzny", "lokalizacje AED"]
+KNOWN_DATASETS = ("3624", "4581", "4955", "39512")
 REPORT = Path("reports/aed_import_report.json")
 MANIFEST = Path("reports/aed_import_manifest.json")
 
@@ -54,6 +55,66 @@ def discover(client):
         resources = list(client.pages(API + "/datasets/" + source_id + "/resources", {}))
         result.append({"institution": institution, "dataset": dataset, "resources": resources})
     return result, searches
+
+
+def refresh_known_sources(client):
+    """Refresh only the four explicitly requested sources; never scan the catalog."""
+    bundles = []
+    for source_id in KNOWN_DATASETS:
+        dataset = client.json(API + "/datasets/" + source_id)["data"]
+        institution_id = dataset["relationships"]["institution"]["data"]["id"]
+        institution = client.json(API + "/institutions/" + institution_id)["data"]
+        resources = list(client.pages(API + "/datasets/" + source_id + "/resources", {}))
+        bundles.append({"institution": institution, "dataset": dataset, "resources": resources})
+    return bundles
+
+
+def inspect_original_validation(bundle):
+    """Read-only proof of the difference between model and original form validation."""
+    from django.core.exceptions import ValidationError
+    from mcod.organizations.models import Organization
+    from mcod.organizations.forms import OrganizationForm
+    from mcod.resources.models import Resource
+
+    details = {}
+    for model, names in ((Organization, ("fax", "abbreviation")),
+                         (Resource, ("old_resource_type",))):
+        for name in names:
+            field = model._meta.get_field(name)
+            checks = {}
+            for label, value in (("null", None), ("empty_string", "")):
+                instance = model()
+                setattr(instance, name, value)
+                try:
+                    instance.full_clean()
+                except ValidationError as exc:
+                    checks[label] = exc.message_dict.get(name, [])
+                else:
+                    checks[label] = []
+            details[name] = {"null": field.null, "blank": field.blank,
+                             "choices": list(field.choices or []),
+                             "full_clean_field_errors": checks}
+    attrs = bundle["institution"]["attributes"]
+    details["source_institution"] = {
+        "id": bundle["institution"]["id"],
+        "fax": attrs.get("fax"), "abbreviation": attrs.get("abbreviation"),
+    }
+    # Introspect the existing form without validating or saving a new object.
+    class ExistingInstitutionForm(OrganizationForm):
+        class Meta:
+            model = Organization
+            fields = ("title", "fax", "abbreviation")
+    form = ExistingInstitutionForm()
+    details["original_form"] = {
+        "fax_required": form.fields["fax"].required,
+        "abbreviation_required": form.fields["abbreviation"].required,
+        "mechanism": (
+            "Django ModelForm._get_validation_exclusions excludes empty optional form "
+            "fields before calling instance.full_clean(exclude=...). "
+            "This differs from unrestricted model.full_clean()."
+        ),
+    }
+    return details
 
 
 def assess(bundle, max_file, max_total):
@@ -134,6 +195,11 @@ def report_markdown(report):
               json.dumps(report.get("imported", {}), ensure_ascii=False, indent=2), "```",
               "", "## Zakres i ograniczenia", report.get("discovery_scope", ""),
               "", "Skrypt zatrzymał się na oryginalnych walidatorach. Etap zapisu pozostaje zablokowany.",
+              "Wszystkie trzy pola mają null=True, ale blank=False: NULL jest dozwolone w bazie, "
+              "lecz odrzucane przez model.full_clean().",
+              "Oryginalny formularz instytucji dopuszcza pusty faks i skrót. Django realizuje to "
+              "przez full_clean(exclude=...). Formularz zasobu wyklucza historyczne old_resource_type.",
+              "Nie zastosowano tych wyłączeń w importerze bez wyjaśnienia wymogu pełnej walidacji.",
               "Nie wykonano pilota, testu idempotencji ani testu API importowanych zasobów.",
               "Nie wykonano importu pozostałych zbiorów. Liczby wierszy plików nie są liczbą unikalnych AED."]
     return "\n".join(lines) + "\n"
@@ -148,6 +214,8 @@ def main():
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--limit-datasets", type=int, default=1)
     parser.add_argument("--dataset-id")
+    parser.add_argument("--refresh-known", action="store_true",
+                        help="Fetch current metadata only for the four explicitly requested AED datasets.")
     parser.add_argument("--max-file-bytes", type=int, default=10 * 1024 * 1024)
     parser.add_argument("--max-total-bytes", type=int, default=25 * 1024 * 1024)
     args = parser.parse_args()
@@ -173,7 +241,11 @@ def main():
     try:
         client = Client(args.max_file_bytes, args.max_total_bytes)
         cache = Path("reports/aed_discovery.json")
-        if args.resume and cache.exists():
+        if args.refresh_known:
+            discovery = {"bundles": refresh_known_sources(client), "searches": [],
+                         "timestamp": report["timestamp"], "mode": "explicit_source_ids"}
+            atomic_json(cache, discovery)
+        elif args.resume and cache.exists():
             discovery = json.loads(cache.read_text())
         else:
             bundles, searches = discover(client)
@@ -203,6 +275,12 @@ def main():
             "resources": [r["id"] for r in assessment["files"]],
         }
         report["verification"]["import_api_tests"] = "not_run_no_import"
+        report["verification"]["original_validation"] = inspect_original_validation(bundle)
+        report["counts"]["blocking_empty_field_errors"] = sum(
+            bool(item.get("full_clean_field_errors", {}).get("null"))
+            for item in report["verification"]["original_validation"].values()
+            if isinstance(item, dict)
+        )
         from scripts.aed_import_models import preflight, import_bundle
         prepared = preflight(bundle, assessment)
         if args.dry_run:
@@ -230,6 +308,8 @@ def main():
             "before": before, "after": after,
         })
         report["discovery_scope"] = (
+            "Four explicitly requested source IDs refreshed, with ID-cursor resource pagination."
+            if args.refresh_known else
             "Five requested keyword searches with ID-cursor pagination, then AED/defibrylat "
             "matching in public metadata. This does not prove detection of every "
             "unlabelled or otherwise unsearchable AED dataset."

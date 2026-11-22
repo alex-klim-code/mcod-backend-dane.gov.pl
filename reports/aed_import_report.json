@@ -1,11 +1,62 @@
 {
-  "timestamp": "2026-11-22T01:44:49.591026+00:00",
+  "timestamp": "2026-11-22T01:48:08.777011+00:00",
   "status": "blocked",
   "errors": [
     "ImportBlocked: Original MCOD validators prevent import; no records or files were written. Source values were not fabricated and application code was not changed. {'institution:229': {'fax': ['To pole nie może być puste.'], 'abbreviation': ['To pole nie może być puste.']}, 'resource:54632': {'old_resource_type': ['To pole nie może być puste.']}}"
   ],
   "verification": {
     "import_api_tests": "not_run_no_import",
+    "original_validation": {
+      "fax": {
+        "null": true,
+        "blank": false,
+        "choices": [],
+        "full_clean_field_errors": {
+          "null": [
+            "To pole nie może być puste."
+          ],
+          "empty_string": [
+            "To pole nie może być puste."
+          ]
+        }
+      },
+      "abbreviation": {
+        "null": true,
+        "blank": false,
+        "choices": [],
+        "full_clean_field_errors": {
+          "null": [
+            "To pole nie może być puste."
+          ],
+          "empty_string": [
+            "To pole nie może być puste."
+          ]
+        }
+      },
+      "old_resource_type": {
+        "null": true,
+        "blank": false,
+        "choices": [],
+        "full_clean_field_errors": {
+          "null": [
+            "To pole nie może być puste."
+          ],
+          "empty_string": [
+            "To pole nie może być puste."
+          ]
+        }
+      },
+      "source_institution": {
+        "id": "229",
+        "fax": null,
+        "abbreviation": null
+      },
+      "original_form": {
+        "fax_required": false,
+        "abbreviation_required": false,
+        "mechanism": "Django ModelForm._get_validation_exclusions excludes empty optional form fields before calling instance.full_clean(exclude=...). This differs from unrestricted model.full_clean()."
+      }
+    },
     "code_unchanged": true,
     "schema_unchanged": true,
     "before": {
@@ -109,5 +160,5 @@
       "54632"
     ]
   },
-  "discovery_scope": "Five requested keyword searches with ID-cursor pagination, then AED/defibrylat matching in public metadata. This does not prove detection of every unlabelled or otherwise unsearchable AED dataset."
+  "discovery_scope": "Four explicitly requested source IDs refreshed, with ID-cursor resource pagination."
 }
