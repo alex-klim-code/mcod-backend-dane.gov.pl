@@ -4,3 +4,4 @@
 - [Preview browser cache](preview-browser-cache.md) — screenshots can retain stale CSS MIME responses; verify a fresh browser before changing styles.
 - [MCOD test isolation](mcod-test-isolation.md) — database rollback alone does not isolate broker callbacks, search indexes or stored files.
 - [Preview network routing](preview-network-routing.md) — public preview DNS can resolve to a private proxy IP; isolate own-app checks from public-source fetching.
+- [Shared database choice](shared-database-choice.md) — owner requires one existing database; do not substitute copies or override managed connections.

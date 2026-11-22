@@ -47,7 +47,9 @@ done
 
 COMPONENT=admin bash scripts/replit/python.sh manage.py aed_storage_check
 COMPONENT=api bash scripts/replit/python.sh manage.py aed_prepare_search
-# Replit applies managed PostgreSQL schema changes through the Publish flow.
+# Standard Publish manages a SEPARATE production database, not the development DB.
+# Sharing the current managed development DB is blocked; see
+# docs/aed-integration/shared-database.md. These scripts do not configure sharing.
 # Do not run Django migrations from this deployment process.
 
 COMPONENT=admin bash scripts/replit/python.sh -m gunicorn --workers 1 --timeout 120 \

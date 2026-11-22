@@ -11,7 +11,10 @@ proxy. W środowisku roboczym wymagany jest obecny adres podglądu z portem `:50
 To nie jest stabilny adres integracji między projektami.
 
 **Projekt nie został jeszcze opublikowany. Produkcyjny `MCOD_API_BASE_URL` nie
-istnieje.** Po konfiguracji zasobnika i sekretu oraz zakończeniu testów użyj
+istnieje.** Wybrana jedna baza development/publikacja nie jest obsługiwana przez
+obecny mechanizm Publishing; konfigurację zatrzymano bez kopiowania danych.
+Zobacz [wynik weryfikacji i blokery](shared-database.md).
+Po rozwiązaniu blokerów, konfiguracji zasobnika i sekretu oraz zakończeniu testów użyj
 adresu faktycznie przydzielonego przez Publishing, z końcówką `/api`.
 Nie używaj `api.dane.gov.pl`: to inna instalacja, nie ten projekt.
 
@@ -19,7 +22,8 @@ Nie używaj `api.dane.gov.pl`: to inna instalacja, nie ten projekt.
 
 1. `bash scripts/replit/setup.sh` instaluje oryginalne zależności oraz SDK App Storage.
 2. Workflow **Supporting services** uruchamia Redis, RabbitMQ i Elasticsearch.
-3. Migracje uruchamiaj świadomie, w bazie developerskiej:
+3. Migracje uruchamiaj wyłącznie po potwierdzeniu docelowej bazy i odtwarzania.
+   Jeżeli baza byłaby współdzielona, zmieniałyby również dane publicznej aplikacji:
    `bash scripts/replit/python.sh manage.py migrate`.
    Nowa migracja adaptera została już zastosowana w tej bazie.
 4. Workflow **Django admin** uruchamia Django, Falcon, Celery oraz proxy na 5000.
@@ -132,21 +136,25 @@ Adapter nie przenosi automatycznie starych lokalnych plików do zasobnika.
 
 ## Publikacja na Replit
 
-Konfiguracja docelowa: stale działająca VM z uwagi na Celery i usługi pomocnicze,
+Przygotowana, ale nieopublikowana konfiguracja: stale działająca VM z uwagi na Celery i usługi pomocnicze,
 `bash scripts/replit/build.sh` oraz `bash scripts/replit/run-production.sh`.
-Skrypt produkcyjny nie uruchamia migracji bazy; zarządzany schemat produkcyjny
-jest obsługiwany przez proces Publish.
+Skrypt produkcyjny nie uruchamia migracji bazy. Standardowy Publish zarządza
+schematem **osobnej** bazy produkcyjnej; nie podłącza obecnej bazy development.
+Nie wybieraj kopiowania danych zamiast uzgodnionej jednej bazy. Aktualny status,
+ograniczenia platformy, odtwarzanie i ryzyka opisuje [shared-database.md](shared-database.md).
 
 Redis/RabbitMQ/Elasticsearch są tutaj usługami lokalnymi VM, a PostgreSQL
 i pliki źródłowe są trwałe. Po ponownej publikacji brakujące indeksy odtwarzają
 się z PostgreSQL; kolejki lokalnego brokera nie są trwałą ewidencją zadań.
-Po przerwanym wdrożeniu można ponowić agregację i publikację przez API.
-Jest to wdrożenie hackathonowe, nie konfiguracja wysokiej dostępności.
+Po przerwanym wdrożeniu ponowienie agregacji i publikacji wymaga świadomej decyzji.
+Przygotowany wariant hackathonowy nie jest konfiguracją wysokiej dostępności
+ani gotowym bezpiecznym wdrożeniem produkcyjnym na wspieranych komponentach.
 
 Sekret i zasobnik są skonfigurowane. Test z rzeczywistym workerem potwierdził
 publikację 3+2 rekordów, aktualizację agregatu i pobranie CSV przez publiczne API.
-Wybierz region w Publishing i sprawdź ustawienia dostępu dla klienta zewnętrznego.
-Kliknięcie Publish należy do właściciela projektu.
+Wynik testu nie potwierdza wspólnej bazy ani działania opublikowanej aplikacji.
+Przed wyborem regionu i dostępu w Publishing trzeba usunąć opisane blokery.
+Kliknięcie Publish należy do właścicielki projektu; obecnie nie zalecamy publikacji.
 
 Po nadaniu rzeczywistego adresu produkcji:
 
