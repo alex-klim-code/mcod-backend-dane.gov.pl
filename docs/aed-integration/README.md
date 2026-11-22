@@ -143,10 +143,26 @@ się z PostgreSQL; kolejki lokalnego brokera nie są trwałą ewidencją zadań.
 Po przerwanym wdrożeniu można ponowić agregację i publikację przez API.
 Jest to wdrożenie hackathonowe, nie konfiguracja wysokiej dostępności.
 
-Przed publikacją uzupełnij sekret i zasobnik, wykonaj testy rzeczywistego workera,
-wybierz region w Publishing i sprawdź ustawienia dostępu dla klienta zewnętrznego.
-Kliknięcie Publish należy do właściciela projektu. Po otrzymaniu adresu produkcji
-ustaw go w backendzie AED Puls jako `MCOD_API_BASE_URL` z końcówką `/api`.
+Sekret i zasobnik są skonfigurowane. Test z rzeczywistym workerem potwierdził
+publikację 3+2 rekordów, aktualizację agregatu i pobranie CSV przez publiczne API.
+Wybierz region w Publishing i sprawdź ustawienia dostępu dla klienta zewnętrznego.
+Kliknięcie Publish należy do właściciela projektu.
+
+Po nadaniu rzeczywistego adresu produkcji:
+
+1. W projekcie MCOD ustaw `API_URL` na pełny publiczny adres HTTPS z końcówką
+   `/api` i opublikuj ponownie, aby procesy wczytały tę wartość. Jeżeli adres
+   jest już znany w Publishing przed pierwszą publikacją, ustaw ją od razu.
+   Bez prawidłowego adresu adapter odrzuca przesyłanie plików kodem
+   `public_api_url_missing` zamiast utrwalać nieprawidłowe linki.
+2. W backendzie AED Puls ustaw `MCOD_API_BASE_URL` na ten sam adres oraz
+   `MCOD_INTEGRATION_SECRET` na ten sam sekret, który zapisano tutaj jako
+   `AED_INTEGRATION_SECRET`. Nie umieszczaj sekretu w przeglądarce.
+3. Utwórz w panelu MCOD zatwierdzone mapowania instytucji i wybierz właściciela
+   oraz licencję agregatu. Test nie pozostawia syntetycznych instytucji w
+   katalogu developerskim ani produkcyjnym.
+4. Wykonaj test z osobnego backendu AED Puls pod adresem produkcyjnym.
+   Ten test pozostaje niewykonany, dopóki projekt nie jest opublikowany.
 
 Zobacz [examples.md](examples.md), [client.ts](client.ts),
 [env.example](env.example) i [test-results.md](test-results.md).

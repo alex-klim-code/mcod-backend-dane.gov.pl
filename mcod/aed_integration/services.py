@@ -4,7 +4,9 @@ import re
 import unicodedata
 from collections import defaultdict
 from datetime import date
+from urllib.parse import urlsplit
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
@@ -25,6 +27,7 @@ from mcod.resources.dga_utils import (
     check_all_resource_validations_status,
 )
 from mcod.resources.models import Resource, ResourceFile
+from mcod.resources.tasks import entrypoint_process_resource_file_validation_task
 
 logger = logging.getLogger("mcod")
 
@@ -241,7 +244,38 @@ def get_dataset_mapping(mapping, external_dataset_id):
         return None
 
 
+def validate_public_api_url():
+    parsed = urlsplit(settings.API_URL)
+    if parsed.scheme != "https" or not parsed.netloc:
+        raise AEDDataError(
+            "Configure API_URL as the public HTTPS MCOD address ending in /api before uploading files.",
+            "public_api_url_missing",
+        )
+
+
+def queue_file_validation(resource_file):
+    """MCOD's automatic upload signal only validates already-published files."""
+    Resource.objects.filter(pk=resource_file.resource_id).update(
+        file_tasks_last_status="PENDING",
+        data_tasks_last_status="PENDING",
+        link_tasks_last_status="PENDING",
+        tabular_data_schema=None,
+    )
+
+    def enqueue():
+        try:
+            entrypoint_process_resource_file_validation_task.delay(resource_file.pk)
+        except Exception:
+            raise AEDDataError(
+                "MCOD could not queue file validation; retry the upload after restoring the worker broker.",
+                "queue_unavailable",
+            )
+
+    transaction.on_commit(enqueue)
+
+
 def create_or_update_resource(mapping, external_dataset_id, upload, title, description, source_url, resource_id=None):
+    validate_public_api_url()
     if not upload or not getattr(upload, "filename", None):
         raise AEDDataError("A CSV or XLSX file is required.", "missing_file")
     filename = upload.filename.split("/")[-1].split("\\")[-1]
@@ -291,7 +325,8 @@ def create_or_update_resource(mapping, external_dataset_id, upload, title, descr
             resource_file.file = uploaded_file
             resource_file.save()
         else:
-            ResourceFile.objects.create(resource=resource, is_main=True, file=uploaded_file)
+            resource_file = ResourceFile.objects.create(resource=resource, is_main=True, file=uploaded_file)
+        queue_file_validation(resource_file)
         action = "resource_updated"
     else:
         resource = Resource(
@@ -311,7 +346,7 @@ def create_or_update_resource(mapping, external_dataset_id, upload, title, descr
             raise AEDDataError("The MCOD resource validation failed: {}".format(exc), "resource_validation")
         with transaction.atomic():
             resource.save()
-            ResourceFile.objects.create(
+            resource_file = ResourceFile.objects.create(
                 resource=resource,
                 is_main=True,
                 file=SimpleUploadedFile(
@@ -320,8 +355,10 @@ def create_or_update_resource(mapping, external_dataset_id, upload, title, descr
                     content_type=upload.content_type or "application/octet-stream",
                 ),
             )
+            queue_file_validation(resource_file)
         action = "resource_created"
     write_audit(action, "accepted", mapping=mapping, dataset=dataset, resource=resource)
+    resource.refresh_from_db()
     return resource, len(rows)
 
 
@@ -536,6 +573,7 @@ def _license_label(license_id):
 
 
 def _create_aggregate_resource(state, dataset, rows, fingerprint):
+    validate_public_api_url()
     if not rows:
         raise AEDDataError("The published source resources contain no AED records.", "empty_aggregate")
     expected_license = _license_label(state.license_chosen)
@@ -571,7 +609,7 @@ def _create_aggregate_resource(state, dataset, rows, fingerprint):
     resource.full_clean(exclude=("old_resource_type",))
     with transaction.atomic():
         resource.save()
-        ResourceFile.objects.create(
+        resource_file = ResourceFile.objects.create(
             resource=resource,
             is_main=True,
             file=SimpleUploadedFile(
@@ -580,6 +618,7 @@ def _create_aggregate_resource(state, dataset, rows, fingerprint):
                 content_type="text/csv",
             ),
         )
+        queue_file_validation(resource_file)
         state.pending_resource = resource
         state.source_fingerprint = fingerprint
         state.status = AEDAggregateState.STATUS_BUILDING

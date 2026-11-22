@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from django.conf import settings
 from django.db.models import Model
 
 from mcod.core.api.search.tasks import _instance
@@ -15,6 +16,8 @@ class SparqlGraphRegistry:
         self.sparql_store = get_sparql_store()
 
     def process_graph(self, action, app_label, object_name, instance_id, *args, **kwargs):
+        if not settings.USE_RDF_DB:
+            return
         instance = _instance(app_label, object_name, instance_id)
         query, ns = getattr(self, action)(instance, *args, **kwargs)
         if not query:

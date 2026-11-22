@@ -6,7 +6,7 @@ Stan: 2026-11-22. To jest zapis wyników, nie deklaracja pełnej gotowości prod
 
 - Django system check: bez błędów.
 - Migracja adaptera `aed_integration`: zastosowana w bazie developerskiej.
-- 13 testów adaptera w osobnej bazie testowej:
+- 19 testów regresyjnych adaptera w osobnej bazie testowej:
   - poprawna normalizacja danych;
   - niepoprawne współrzędne / NaN;
   - odrzucenie niepotwierdzonej fizycznej weryfikacji;
@@ -23,6 +23,9 @@ Stan: 2026-11-22. To jest zapis wyników, nie deklaracja pełnej gotowości prod
   - agregacja 3+2 rekordów z dwóch instytucji, wybór najnowszej wersji wspólnego
     ID, oznaczenie potencjalnych duplikatów, aktualizacja i zachowanie starego
     zasobu MCOD.
+  - wymaganie pełnego adresu HTTPS dla linków plików;
+  - wyłączenie połączeń RDF, gdy usługa jest wyłączona w konfiguracji;
+  - dokumentacja Swagger używająca tego samego originu i specyfikacji AED.
 
 Polecenie:
 ```bash
@@ -38,6 +41,41 @@ Nie jest dowodem działania całej kolejki Celery ani publikacji produkcyjnej.
 migracji na czystej bazie odwołuje się do nieistniejącej tabeli
 `counters_resourceviewcounter` przy tworzeniu materializowanego widoku.
 Nowa migracja adaptera została osobno poprawnie sprawdzona na istniejącej bazie.
+
+## Rzeczywisty test end-to-end
+
+Wynik: **1 passed**, osobno od 19 testów regresyjnych. W zwykłym uruchomieniu
+ten test ma status `skipped`, ponieważ wymaga jawnego włączenia usług rzeczywistych.
+
+```bash
+RUN_AED_E2E=1 COMPONENT=api bash scripts/replit/python.sh -m pytest -q \
+  --nomigrations -n0 --ds=mcod.settings.aed_e2e \
+  mcod/aed_integration/tests/test_live_pipeline.py
+```
+
+Rzeczywiste PostgreSQL, Elasticsearch, prywatne App Storage i worker Celery
+`solo`; izolowana kolejka pamięciowa zamiast brokera developerskiego.
+Nie zastępowano wyników walidacji ani bramki publikacji.
+
+Potwierdzono:
+
+- Instytucje A i B, ich zbiory i źródła CSV zawierające 3 oraz 2 AED.
+- Asynchroniczną walidację pliku, danych tabelarycznych i linku MCOD.
+- Zapis plików do App Storage i odtworzenie identycznych bajtów po usunięciu
+  lokalnej kopii.
+- Publikację rzeczywistego zasobu zbiorczego z pięcioma rekordami.
+- Aktualizację źródła i publikację nowej wersji agregatu.
+- Pobranie metadanych i CSV przez oryginalne endpointy Falcon, wywołane
+  klientem testowym WSGI.
+- Zachowanie poprzedniego agregatu jako szkicu i odmowę jego anonimowego pobrania.
+- Odrzucenie żądania bez tokenu oraz próby zmiany zasobu instytucji A przez
+  ścieżkę instytucji B.
+- Widoczność obu źródeł i nowego agregatu w oryginalnym panelu administratora:
+  zalogowany klient testowy Django otrzymał HTTP 200 i linki do tych zasobów.
+  Nie był to wizualny test zalogowanej przeglądarki.
+
+Dane i konto administratora istniały tylko w testowej bazie. Test usuwa wyłącznie
+własne obiekty App Storage oraz własne indeksy z unikalnym prefiksem.
 
 ## Uruchomione
 
@@ -62,18 +100,19 @@ Stronę logowania sprawdzono wizualnie w świeżym Chromium. Style CSS działaj�
 Nie logowano się na istniejące konto i nie zmieniano jego hasła.
 W developerskiej bazie po testach pozostaje 0 mapowań AED, 0 zbiorów i 0 zasobów.
 
-## Niewykonane / wymagające konfiguracji
+## Konfiguracja i pozostałe kroki
 
-- App Storage: SDK zainstalowane; sprawdzenie domyślnego zasobnika nie przeszło.
-  Należy utworzyć zasobnik w Tools → App Storage i ponowić sprawdzenie.
+- App Storage: zasobnik dostępny, trwały zapis włączony również w działającym
+  procesie; rzeczywisty zapis i odczyt potwierdzono w teście end-to-end.
 - Sekret integracji został zapisany przez bezpieczny formularz i wczytany po
   restarcie. Żądanie bez tokenu otrzymało 401 zamiast wcześniejszego 503.
   Nie ujawniano wartości sekretu.
-- Nie wykonano pełnego testu 3+2 z rzeczywistym workerem walidującym pliki
-  i pobraniem przez publiczne API.
-- Nie potwierdzono widoku zalogowanego administratora dla testowych zasobów.
-  Testowe rekordy były izolowane w bazie testowej.
 - Projekt nie został opublikowany; brak produkcyjnego URL i testu z backendu
   AED Puls. Kod backendu AED Puls nie znajduje się w tym repozytorium.
+- Skonfigurowano VM oraz polecenia budowania i uruchamiania dla Publishing.
+  Po nadaniu adresu należy ustawić produkcyjne `API_URL` (HTTPS, końcówka `/api`)
+  i wczytać je ponowną publikacją przed przesyłaniem plików.
+- Do użycia rzeczywistych instytucji trzeba skonfigurować zatwierdzone mapowania
+  oraz właściciela i licencję agregatu w panelu MCOD.
 
-Wynik należy uzupełnić po konfiguracji zasobnika, sekretu i rzeczywistych testach.
+Wynik produkcyjny i test z osobnego projektu wymagają jeszcze publikacji.

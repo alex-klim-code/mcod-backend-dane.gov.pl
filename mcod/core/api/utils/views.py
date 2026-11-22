@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlsplit
 
 import falcon
 from django.conf import settings
@@ -55,22 +56,28 @@ class SwaggerView:
         template = loader.get_template("swagger_ui/index.html")
         versions = sorted(DOC_VERSIONS, reverse=True)
         active_spec_name = request.params.get("urls.primaryName", f"DANE.GOV.PL API v{versions[0]}")
+        # Documentation is same-origin; API_URL remains absolute for stored file links.
+        api_path = urlsplit(settings.API_URL).path.rstrip("/")
 
         spec_urls = [
             *[
                 {
-                    "url": f"{settings.API_URL}/spec/{version}",
+                    "url": f"{api_path}/spec/{version}",
                     "name": f"DANE.GOV.PL API v{version}",
                 }
                 for version in versions
             ],
             {
-                "url": f"{settings.API_URL}/catalog/dcat_ap/spec",
+                "url": f"{api_path}/catalog/dcat_ap/spec",
                 "name": "DANE.GOV.PL RDF API (DCAT-AP)",
             },
             {
-                "url": f"{settings.API_URL}/catalog/dcat_ap_pl/spec",
+                "url": f"{api_path}/catalog/dcat_ap_pl/spec",
                 "name": "DANE.GOV.PL RDF API (DCAT-AP-PL)",
+            },
+            {
+                "url": f"{api_path}/integrations/aed/openapi.yaml",
+                "name": "AED Puls Integration",
             },
         ]
         spec_urls.sort(key=lambda spec: spec["name"] != active_spec_name)

@@ -12,6 +12,9 @@ expertMode = true
 [userenv.development]
 UV_PYTHON_DOWNLOADS = "manual"
 
+[userenv.shared]
+MCOD_APP_STORAGE_ENABLED = "true"
+
 [workflows]
 runButton = "Project"
 
@@ -69,3 +72,11 @@ exposeLocalhost = true
 localPort = 25672
 externalPort = 3001
 exposeLocalhost = true
+
+[objectStorage]
+defaultBucketID = "replit-objstore-d08d3234-3c6d-4ee4-a8df-2c29e98969d5"
+
+[deployment]
+deploymentTarget = "vm"
+run = ["bash", "scripts/replit/run-production.sh"]
+build = ["bash", "scripts/replit/build.sh"]

@@ -10,6 +10,8 @@ FALCON_LIMITER_ENABLED = False
 # Never let model signals enqueue test record IDs into the development broker.
 CELERY_BROKER_URL = "memory://"
 CELERY_TASK_ALWAYS_EAGER = False
+REPLIT_APP_STORAGE_ENABLED = False
+API_URL = "https://mcod-test.invalid/api"
 FALCON_MIDDLEWARES = [  # noqa: F405
     item
     for item in FALCON_MIDDLEWARES  # noqa: F405

@@ -46,7 +46,9 @@ CSRF_TRUSTED_ORIGINS = (
     [origin for origin in (_preview_domain, f"{_preview_domain}:5000") if _preview_domain]
 )
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-API_URL = os.environ.get("API_URL", "/api")
+API_URL = os.environ.get(
+    "API_URL", "https://{}:5000/api".format(_preview_domain) if _preview_domain else "/api"
+)
 AED_INTEGRATION_SECRET = os.environ.get("AED_INTEGRATION_SECRET", "")
 AED_REQUIRE_HTTPS = True
 REPLIT_APP_STORAGE_ENABLED = (

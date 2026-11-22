@@ -105,6 +105,8 @@ def _mapping_or_404(external_organization_id):
 
 def _raise_data_error(exc, action, mapping=None, dataset=None, resource=None):
     write_audit(action, "rejected", mapping=mapping, dataset=dataset, resource=resource, code=exc.code)
+    if exc.code in ("queue_unavailable", "public_api_url_missing"):
+        raise falcon.HTTPServiceUnavailable(description=str(exc), code=exc.code)
     if exc.code == "validation_pending":
         raise falcon.HTTPConflict(title="Validation is still running", description=str(exc), code=exc.code)
     if exc.code == "validation_failed":

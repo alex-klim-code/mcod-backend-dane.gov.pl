@@ -33,6 +33,18 @@ api_pid=$!
 COMPONENT=celery bash scripts/replit/python.sh -m celery --app=mcod.celeryapp:app worker \
   --pool=solo --concurrency=1 --loglevel=INFO &
 worker_pid=$!
+for attempt in $(seq 1 120); do
+  if curl --silent --fail http://127.0.0.1:8001/login/ >/dev/null \
+    && curl --silent --fail http://127.0.0.1:8000/ping >/dev/null; then
+    break
+  fi
+  if [[ "$attempt" -eq 120 ]]; then
+    echo "Django or Falcon did not become ready." >&2
+    exit 1
+  fi
+  sleep 1
+done
+
 sed "s|@STATIC_ROOT@|$PWD/statics|" scripts/replit/nginx.conf > /tmp/mcod-nginx.conf
 nginx -e stderr -p "$PWD" -c /tmp/mcod-nginx.conf -g "daemon off;" &
 nginx_pid=$!

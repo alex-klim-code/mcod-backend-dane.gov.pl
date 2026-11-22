@@ -437,13 +437,18 @@ class TabularData(IndexedData):
             "date": dsl_field.Text(
                 fields={
                     "text": dsl_field.Text(),
-                    "date": dsl_field.Date(format=constance_config.DATE_FORMATS),
+                    "date": dsl_field.Date(
+                        format=constance_config.DATE_FORMATS + "||strict_date_optional_time"
+                    ),
                 }
             ),
             "datetime": dsl_field.Text(
                 fields={
                     "text": dsl_field.Text(),
-                    "datetime": dsl_field.Date(format=constance_config.DATE_FORMATS),
+                    # Canonical ISO timestamps can include a UTC offset or Z.
+                    "datetime": dsl_field.Date(
+                        format=constance_config.DATE_FORMATS + "||strict_date_optional_time"
+                    ),
                 }
             ),
         }
