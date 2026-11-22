@@ -47,9 +47,8 @@ done
 
 COMPONENT=admin bash scripts/replit/python.sh manage.py aed_storage_check
 COMPONENT=api bash scripts/replit/python.sh manage.py aed_prepare_search
-# Standard Publish manages a SEPARATE production database, not the development DB.
-# Sharing the current managed development DB is blocked; see
-# docs/aed-integration/shared-database.md. These scripts do not configure sharing.
+# Publish manages a separate production DB and the owner-approved initial
+# development-data copy. This startup script does not perform the copy.
 # Do not run Django migrations from this deployment process.
 
 COMPONENT=admin bash scripts/replit/python.sh -m gunicorn --workers 1 --timeout 120 \

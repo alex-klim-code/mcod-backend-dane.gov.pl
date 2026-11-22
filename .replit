@@ -15,6 +15,9 @@ UV_PYTHON_DOWNLOADS = "manual"
 [userenv.shared]
 MCOD_APP_STORAGE_ENABLED = "true"
 
+[userenv.production]
+API_URL = "https://mcod-backend-danegovpl.replit.app/api"
+
 [workflows]
 runButton = "Project"
 
@@ -55,23 +58,8 @@ waitForPort = 5000
 outputType = "webview"
 
 [[ports]]
-localPort = 4369
-externalPort = 80
-exposeLocalhost = true
-
-[[ports]]
 localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 5672
-externalPort = 3000
-exposeLocalhost = true
-
-[[ports]]
-localPort = 25672
-externalPort = 3001
-exposeLocalhost = true
+externalPort = 80
 
 [objectStorage]
 defaultBucketID = "replit-objstore-d08d3234-3c6d-4ee4-a8df-2c29e98969d5"

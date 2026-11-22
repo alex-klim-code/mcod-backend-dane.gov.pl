@@ -60,12 +60,17 @@ It was **not** run here; no sample users or datasets were imported.
 - The existing Replit `DATABASE_URL` provides PostgreSQL. Do not copy it into a file
   or log it. Existing upstream migrations were applied to the initially empty
   development database.
-- The owner chose one existing database for development and publishing, not a
-  data copy. Current supported Publishing creates a separate production database;
-  that choice cannot currently be configured. Do not override managed credentials
-  or substitute copying. Publishing is stopped; see
-  `docs/aed-integration/shared-database.md` for evidence, recovery prerequisites
-  and unresolved search, broker and file consistency risks.
+- The locked PostgreSQL client predates TLS SNI. Both Replit settings profiles
+  apply Neon's documented endpoint option for old libpq through
+  `mcod.settings.database_compat`, deriving it from the current managed host.
+  Keep TLS and credentials unchanged; do not hardcode a development endpoint into
+  production or edit the managed connection string to work around this.
+- The owner approved a **separate production database with an initial copy of
+  development data**, superseding the earlier shared-database requirement.
+  Use Publishing's data-copy option; do not copy or override managed credentials,
+  reset development, or implement a custom production migration/copy script.
+  Later changes in dev and production do not synchronize automatically. See
+  `docs/aed-integration/shared-database.md` for the publishing procedure.
 - Django signing and JWT signing use the workspace's `SESSION_SECRET`.
 - If no `FIELD_ENCRYPTION_KEYS` secret is provided, development field encryption
   uses an HMAC-derived key from `SESSION_SECRET`. **Keep that secret stable**:
@@ -106,14 +111,16 @@ the shared secret; no silent local-only file storage is allowed.
 The prepared production scripts use `mcod.settings.production_replit` and
 Gunicorn rather than Django's development server. They do not run schema
 migrations against production; standard Publish manages a separate production
-schema, not a shared development connection. No active publication or production
-URL was returned by the platform check on 2026-11-22.
+schema, not a shared development connection. The owner must choose the approved
+development-data copy in Publishing and click Publish. Do not describe the
+production copy or hosted startup as completed before verification.
 
-If sharing ever becomes officially supported, writes, deletes and migrations
-from either environment affect the same data. Tests must use a separate test
-database, broker, search namespaces and isolated files, never the shared database.
-No current restore point has been verified; confirm database recovery availability
-before any public connection. Keep encryption/signing secrets stable.
+Development and production databases, sessions, queues and search indexes are
+independent. Tests must use a separate test database, broker, search namespaces
+and isolated files, never the production database. Keep encryption/signing
+secrets stable so copied encrypted fields remain readable. Existing App Storage
+files are referenced by the copied records, not copied by PostgreSQL's data-copy
+step; both environments need access to the configured private bucket.
 
 Publishing builds Python, its locked packages, and Elasticsearch with its
 plugins under `runtime/`. This is an intentional release dependency directory:

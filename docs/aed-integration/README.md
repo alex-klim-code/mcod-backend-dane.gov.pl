@@ -7,25 +7,26 @@ ani ról ADMIN / USER / ORGANIZATIONS.
 ## Bieżący status
 
 Kod uruchamia panel Django pod `/` i oryginalny Falcon pod `/api/`, za wspólnym
-proxy. W środowisku roboczym wymagany jest obecny adres podglądu z portem `:5000`.
+proxy. W środowisku roboczym używaj obecnego adresu HTTPS podglądu bez `:5000`.
 To nie jest stabilny adres integracji między projektami.
 
-**Projekt nie został jeszcze opublikowany. Produkcyjny `MCOD_API_BASE_URL` nie
-istnieje.** Wybrana jedna baza development/publikacja nie jest obsługiwana przez
-obecny mechanizm Publishing; konfigurację zatrzymano bez kopiowania danych.
-Zobacz [wynik weryfikacji i blokery](shared-database.md).
-Po rozwiązaniu blokerów, konfiguracji zasobnika i sekretu oraz zakończeniu testów użyj
-adresu faktycznie przydzielonego przez Publishing, z końcówką `/api`.
+**Właścicielka zatwierdziła osobną bazę produkcyjną z początkową kopią danych
+development.** W Publishing wybierz kopiowanie aktualnych danych dev i opublikuj
+aplikację. Dla istniejącej bazy produkcyjnej oznacza to zastąpienie jej zawartości;
+baza dev pozostaje bez zmian. Późniejsze zapisy obu baz nie synchronizują się.
+Zobacz [procedurę publikacji](shared-database.md).
+Adres przydzielony przez Publishing nie dowodzi udanego startu. Po publikacji
+używaj faktycznego adresu HTTPS aplikacji z końcówką `/api`.
 Nie używaj `api.dane.gov.pl`: to inna instalacja, nie ten projekt.
 
 ## Uruchomienie lokalne na Replit
 
 1. `bash scripts/replit/setup.sh` instaluje oryginalne zależności oraz SDK App Storage.
 2. Workflow **Supporting services** uruchamia Redis, RabbitMQ i Elasticsearch.
-3. Migracje uruchamiaj wyłącznie po potwierdzeniu docelowej bazy i odtwarzania.
-   Jeżeli baza byłaby współdzielona, zmieniałyby również dane publicznej aplikacji:
+3. Migracje development uruchamiaj wyłącznie po potwierdzeniu docelowej bazy:
    `bash scripts/replit/python.sh manage.py migrate`.
-   Nowa migracja adaptera została już zastosowana w tej bazie.
+   Migracja adaptera została już zastosowana w bazie dev. Strukturą zarządzanej
+   bazy produkcyjnej zajmuje się Publishing; nie uruchamiaj tam tego polecenia.
 4. Workflow **Django admin** uruchamia Django, Falcon, Celery oraz proxy na 5000.
 5. Skrypt odtwarza brakujące indeksy katalogu z istniejących rekordów. Nie usuwa
    indeksów, użytkowników, zbiorów ani zasobów.
@@ -136,12 +137,13 @@ Adapter nie przenosi automatycznie starych lokalnych plików do zasobnika.
 
 ## Publikacja na Replit
 
-Przygotowana, ale nieopublikowana konfiguracja: stale działająca VM z uwagi na Celery i usługi pomocnicze,
+Konfiguracja publikacji: stale działająca VM z uwagi na Celery i usługi pomocnicze,
 `bash scripts/replit/build.sh` oraz `bash scripts/replit/run-production.sh`.
 Skrypt produkcyjny nie uruchamia migracji bazy. Standardowy Publish zarządza
 schematem **osobnej** bazy produkcyjnej; nie podłącza obecnej bazy development.
-Nie wybieraj kopiowania danych zamiast uzgodnionej jednej bazy. Aktualny status,
-ograniczenia platformy, odtwarzanie i ryzyka opisuje [shared-database.md](shared-database.md).
+Właścicielka zatwierdziła początkową kopię dev do osobnej bazy produkcyjnej.
+Opcję kopiowania wybierz w Publishing; szczegóły i historyczne ograniczenia
+wariantu wspólnej bazy opisuje [shared-database.md](shared-database.md).
 
 Redis/RabbitMQ/Elasticsearch są tutaj usługami lokalnymi VM, a PostgreSQL
 i pliki źródłowe są trwałe. Po ponownej publikacji brakujące indeksy odtwarzają
@@ -152,13 +154,13 @@ ani gotowym bezpiecznym wdrożeniem produkcyjnym na wspieranych komponentach.
 
 Sekret i zasobnik są skonfigurowane. Test z rzeczywistym workerem potwierdził
 publikację 3+2 rekordów, aktualizację agregatu i pobranie CSV przez publiczne API.
-Wynik testu nie potwierdza wspólnej bazy ani działania opublikowanej aplikacji.
-Przed wyborem regionu i dostępu w Publishing trzeba usunąć opisane blokery.
-Kliknięcie Publish należy do właścicielki projektu; obecnie nie zalecamy publikacji.
+Wynik testu development nie potwierdza działania opublikowanej aplikacji.
+W Publishing wybierz zatwierdzoną kopię danych i sprawdź dostęp oraz ustawienia
+publikacji. Kliknięcie Publish należy do właścicielki projektu.
 
 Po nadaniu rzeczywistego adresu produkcji:
 
-1. W projekcie MCOD ustaw `API_URL` na pełny publiczny adres HTTPS z końcówką
+1. W projekcie MCOD ustaw produkcyjny `API_URL` na pełny publiczny adres HTTPS z końcówką
    `/api` i opublikuj ponownie, aby procesy wczytały tę wartość. Jeżeli adres
    jest już znany w Publishing przed pierwszą publikacją, ustaw ją od razu.
    Bez prawidłowego adresu adapter odrzuca przesyłanie plików kodem

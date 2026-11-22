@@ -1,4 +1,43 @@
-# Jedna baza dla development i publikacji — wynik weryfikacji
+# Bazy development i produkcji
+
+## Obowiązująca decyzja
+
+Właścicielka zatwierdziła **osobną bazę produkcyjną z początkową kopią danych
+development**. Zastępuje to wcześniejszy wymóg jednej wspólnej bazy.
+Późniejsze zmiany danych w obu środowiskach nie synchronizują się automatycznie.
+Nie resetować dev, nie nadpisywać zarządzanego `DATABASE_URL` i nie dodawać
+własnych skryptów kopiowania lub migracji produkcji.
+
+## Publikacja
+
+1. W Publishing pozostaw Reserved VM oraz przygotowane polecenia build/start.
+   Jedyny publiczny port to wewnętrzny 5000 → zewnętrzny 80.
+2. W ustawieniach bazy wybierz kopię bieżących danych development do produkcji.
+   Przy istniejącej bazie jest to opcja nadpisania danych produkcyjnych:
+   **zastępuje jej zawartość, nie zmieniając bazy dev**. Nie wybieraj jej
+   automatycznie przy kolejnych publikacjach, gdy produkcja ma już własne dane.
+   Tę opcję oraz sam przycisk Publish zatwierdza właścicielka.
+3. Publishing zarządza różnicą schematów. Nie uruchamiaj `manage.py migrate`
+   przeciwko zarządzanej produkcji ani w buildzie, ani przy starcie.
+4. Zachowaj istniejące `SESSION_SECRET` i `AED_INTEGRATION_SECRET`.
+   Nie zmieniaj klucza szyfrowania przy kopiowaniu istniejących rekordów.
+   Produkcyjny `API_URL` musi wskazywać przydzielony adres HTTPS z `/api`;
+   nie ustawiaj tej wartości jako wspólnej dla dev i prod.
+5. Oba środowiska potrzebują dostępu do skonfigurowanego prywatnego App Storage.
+   Kopia PostgreSQL przenosi odwołania, nie zawartość plików. Nie usuwaj z
+   zasobnika obiektów, do których wciąż odwołuje się drugie środowisko.
+6. Po udanej publikacji porównaj liczniki instytucji, zbiorów i zasobów przez
+   odczyty baz; sprawdź logowanie oraz odczyt istniejącego publicznego pliku.
+   Adres przypisany do nieudanego wdrożenia nie jest dowodem działania.
+
+Produkcja ma niezależne sesje, kolejki i indeksy Elasticsearch. Start odtwarza
+brakujące indeksy z rekordów docelowej bazy. Nie oznacza to synchronizacji dev
+i prod. Nie uruchamiaj testów zapisujących do produkcji. Python 3.8, Django 2.2
+i Elasticsearch 6.8 pozostają niewspierane; poprawki publikacji nie są aktualizacją
+bezpieczeństwa.
+
+<details>
+<summary>Archiwalna analiza wspólnej bazy — wcześniejsza decyzja nie obowiązuje</summary>
 
 ## Decyzja i status
 
@@ -158,3 +197,5 @@ Po ewentualnej zatwierdzonej publikacji:
 
 Wszystkie kontrole po publikacji, porównanie obu połączeń i test z backendu
 AED Puls **pozostają niewykonane**. Nie ma publicznego `MCOD_API_BASE_URL`.
+
+</details>

@@ -4,6 +4,10 @@ import hashlib
 import hmac
 import os
 
+from psycopg2.extensions import libpq_version
+
+from mcod.settings.database_compat import neon_compatible_database
+
 os.environ.setdefault("REDIS_URL", "redis://127.0.0.1:6379")
 os.environ.setdefault("ELASTICSEARCH_HOSTS", "127.0.0.1:9200")
 os.environ.setdefault("RABBITMQ_HOST", "127.0.0.1:5672")
@@ -23,7 +27,9 @@ if not FIELD_ENCRYPTION_KEYS:
         ).hexdigest()
     ]
 
-DATABASES = {"default": env.db("DATABASE_URL")}  # noqa: F405
+DATABASES = {
+    "default": neon_compatible_database(env.db("DATABASE_URL"), libpq_version())  # noqa: F405
+}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 
 _configured_hosts = [
