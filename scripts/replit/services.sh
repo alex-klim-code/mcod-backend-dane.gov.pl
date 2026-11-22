@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+source scripts/replit/runtime-paths.sh
+elastic="$MCOD_ELASTICSEARCH_HOME"
+if [[ ! -x "$elastic/bin/elasticsearch" || ! -d "$elastic/config" ]]; then
+  echo "Elasticsearch runtime is missing at $elastic. Run scripts/replit/build.sh before publishing." >&2
+  exit 1
+fi
 service_root="$PWD/.cache/services"
 mkdir -p "$service_root/redis" "$service_root/rabbitmq" "$service_root/elasticsearch-data" "$service_root/elasticsearch-logs"
 
@@ -21,10 +27,9 @@ export RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS="+S 2:2 -kernel inet_dist_use_interfa
 rabbitmq-server &
 rabbit_pid=$!
 
-elastic="$service_root/elasticsearch-6.8.23"
 for name in hunspell synonyms; do
-  if [[ ! -e "$elastic/config/$name" ]]; then
-    ln -s "$PWD/docker/elasticsearch/$name" "$elastic/config/$name"
+  if [[ -L "$elastic/config/$name" || ! -e "$elastic/config/$name" ]]; then
+    ln -sfn "$PWD/docker/elasticsearch/$name" "$elastic/config/$name"
   fi
 done
 cp docker/elasticsearch/stopwords.txt "$elastic/config/stopwords.txt"

@@ -275,3 +275,6 @@ mcod/api_key.txt
 /.pythonlibs/
 /generated-artifacts/
 /statics/
+
+# Rebuilt production dependencies; release content, never source-controlled.
+/runtime/

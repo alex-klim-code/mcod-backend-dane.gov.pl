@@ -2,6 +2,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
+export MCOD_RUNTIME_ROOT="$PWD/runtime"
+source scripts/replit/runtime-paths.sh
+if [[ ! -f "$MCOD_RUNTIME_ROOT/build-ready" || ! -x "$MCOD_PYTHON" \
+      || ! -x "$MCOD_ELASTICSEARCH_HOME/bin/elasticsearch" ]]; then
+  echo "Production runtime is incomplete. Re-publish with scripts/replit/build.sh as the build command." >&2
+  exit 1
+fi
 export DJANGO_SETTINGS_MODULE=mcod.settings.production_replit
 export MCOD_APP_STORAGE_ENABLED=true
 export REDIS_URL="${REDIS_URL:-redis://127.0.0.1:6379}"
@@ -22,6 +29,10 @@ trap cleanup EXIT INT TERM
 bash scripts/replit/services.sh &
 services_pid=$!
 for attempt in $(seq 1 120); do
+  if ! kill -0 "$services_pid" 2>/dev/null; then
+    echo "Supporting services exited during startup; see their preceding error." >&2
+    exit 1
+  fi
   if redis-cli -h 127.0.0.1 ping >/dev/null 2>&1 \
     && curl --silent --fail http://127.0.0.1:9200 >/dev/null \
     && (echo >/dev/tcp/127.0.0.1/5672) >/dev/null 2>&1; then

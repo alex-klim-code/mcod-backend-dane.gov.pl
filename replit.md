@@ -101,6 +101,19 @@ The prepared production scripts use `mcod.settings.production_replit` and
 Gunicorn rather than Django's development server. They do not run schema
 migrations against production; managed schema changes go through Publish.
 
+Publishing builds Python, its locked packages, and Elasticsearch with its
+plugins under `runtime/`. This is an intentional release dependency directory:
+Git ignores it, but deployment packaging must include it. `.cache/` and
+`.pythonlibs/` remain development-only and excluded from deployment packaging.
+`scripts/replit/runtime-paths.sh` keeps production and development paths separate;
+production startup fails immediately when the built runtime is missing.
+Only web port 5000 is mapped publicly, to external port 80. Redis, RabbitMQ,
+Erlang distribution, and Elasticsearch must remain internal. The Python wrapper
+uses the standard HTTPS preview origin without `:5000` for development API URLs.
+The root proxy displays the existing login page with HTTP 200 for anonymous
+requests so publishing can check readiness; other protected pages retain their
+login redirects and authenticated dashboard responses pass through unchanged.
+
 ## Limits and safety
 
 Python 3.8, Django 2.2, and Elasticsearch 6.8 are old, unsupported release lines.
@@ -108,7 +121,9 @@ Preserving them avoids an unrequested upgrade, but this setup must not be used
 with sensitive or production data or published as-is. A supported-version upgrade
 and security review are separate work.
 
-Runtime downloads, packages, service data, and generated output are excluded from
-Git and deployment packaging. PostgreSQL is persistent; local Redis/RabbitMQ/
-Elasticsearch data under `.cache/services` is for development and can be lost if
-the cache is removed. Do not use it as production storage.
+Development caches, download archives, service data, and diagnostic output are
+excluded from Git and deployment packaging. Required production binaries and
+packages are rebuilt under the intentionally packaged `runtime/` directory.
+PostgreSQL is persistent; local Redis/RabbitMQ/Elasticsearch state under
+`.cache/services` can be lost when the cache is removed or the app is republished.
+Do not treat that local state as durable production storage.

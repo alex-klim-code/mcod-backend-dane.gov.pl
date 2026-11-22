@@ -1,4 +1,4 @@
-- [Workflow restarts](workflow-restarts.md) — newly grouped workflows may leave old child processes alive; inspect duplicates instead of changing ports.
+- [Workflow restarts](workflow-restarts.md) — inspect duplicate child processes and recheck public port mappings after workflow changes.
 - [Django CSRF preview origins](django-csrf-preview-origins.md) — Django 2.2 compares trusted preview hosts including the external port; trust the exact Repl hostname.
 - [AED integration boundaries](aed-integration-boundaries.md) — AED Puls owns users and roles; MCOD publishes mapped data and must preserve aggregate history.
 - [Preview browser cache](preview-browser-cache.md) — screenshots can retain stale CSS MIME responses; verify a fresh browser before changing styles.
